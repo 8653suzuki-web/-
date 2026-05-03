@@ -88,8 +88,20 @@ nav.tabs button:hover:not(.active){color:var(--text)}
 .card h3{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:10px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .row.between{justify-content:space-between}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.grid2 input,.grid2 select,.grid2 textarea{min-width:0;width:100%}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media(max-width:600px){
+  .castle-stage{height:260px !important}
+}
+.kpi-input{
+  background:transparent;border:none;color:var(--text);
+  font-size:18px;font-weight:800;font-feature-settings:"tnum";
+  width:100%;padding:0;outline:none;font-family:inherit;
+  border-bottom:1px dashed transparent;transition:.15s;
+}
+.kpi-input:hover{border-bottom-color:rgba(255,255,255,.2)}
+.kpi-input:focus{border-bottom-color:var(--accent);color:var(--accent)}
 @media(max-width:560px){.grid3{grid-template-columns:1fr 1fr}}
 
 /* Cheer card (oracle/herald) */
@@ -266,10 +278,10 @@ label.field .l{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bott
 .kpi .v.bad{color:var(--bad)}
 
 /* Annual editable table */
-.ann-table{min-width:780px;font-feature-settings:"tnum"}
+.ann-table{min-width:870px;font-feature-settings:"tnum"}
 .ann-row{
   display:grid;
-  grid-template-columns:48px 92px 92px 92px 92px 86px 96px 110px;
+  grid-template-columns:48px 92px 92px 92px 86px 92px 86px 96px 110px;
   gap:6px;align-items:center;padding:6px 4px;
   border-top:1px solid var(--border);font-size:12px;
 }
@@ -786,8 +798,8 @@ label.field .l{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bott
     <h3>月別カテゴリー集計</h3>
     <div class="month-tabs" id="monthTabs"></div>
     <div class="summary-grid">
-      <div class="kpi"><div class="l">手取り収入</div><div class="v" id="mIncome">¥0</div></div>
-      <div class="kpi"><div class="l">固定費</div><div class="v" id="mFixed">¥0</div></div>
+      <div class="kpi"><div class="l">手取り収入（編集可）</div><input type="number" class="kpi-input" id="mIncome"></div>
+      <div class="kpi"><div class="l">固定費（編集可）</div><input type="number" class="kpi-input" id="mFixed"></div>
       <div class="kpi"><div class="l">変動費(実績)</div><div class="v" id="mVar">¥0</div></div>
       <div class="kpi"><div class="l">月間収支</div><div class="v" id="mNet">¥0</div></div>
     </div>
@@ -995,6 +1007,8 @@ function loadState(){
         s.annualOverrides = {};
         for(const m of MONTHS) s.annualOverrides[m] = {income:null, fixed:null, varActual:null, other:null};
       }
+      // 月別タブの固定費オーバーライド
+      if(!s.monthlyFixedOverride) s.monthlyFixedOverride = {};
       return s;
     }catch{}
   }
@@ -1037,6 +1051,10 @@ const todayStr = ()=>{const d=new Date();return d.toISOString().slice(0,10)};
 function getMonth(dateStr){return parseInt(dateStr.slice(5,7))}
 
 function getFixedTotal(month){
+  // 月別タブで直接編集された総額があればそれを使う
+  if(state.monthlyFixedOverride && state.monthlyFixedOverride[month] != null){
+    return +state.monthlyFixedOverride[month];
+  }
   if(state.fixedOverrides && state.fixedOverrides[month]){
     return state.fixedOverrides[month].reduce((s,f)=>s+(+f.amount||0),0);
   }
@@ -1259,6 +1277,9 @@ function flashTier(tier){
 // ============== CASTLE SVG ==============
 function renderCastle(rank){
   const svg = document.getElementById('castleSvg');
+  // モバイルでは城の中心部にズームしてしっかり大きく見せる
+  const isMobile = window.innerWidth < 700;
+  svg.setAttribute('viewBox', isMobile ? '180 -30 440 270' : '0 0 800 240');
   // sky gradient by rank
   const skyColors = [
     ['#1a1d2e','#3a2e1f'],   // 0-3: night-ish
@@ -2186,8 +2207,21 @@ function renderMonthly(){
   const varTotal = expenses.reduce((s,e)=>s+(+e.amount||0),0);
   const net = (b?.income||0) - fixed - varTotal;
 
-  document.getElementById('mIncome').textContent = fmt(b?.income||0);
-  document.getElementById('mFixed').textContent = fmt(fixed);
+  const mIncomeEl = document.getElementById('mIncome');
+  const mFixedEl = document.getElementById('mFixed');
+  mIncomeEl.value = b?.income || 0;
+  mFixedEl.value = fixed;
+  mIncomeEl.onchange = ()=>{
+    if(!state.monthlyBudgets[m]) state.monthlyBudgets[m] = {...DEFAULT_BUDGETS[m]};
+    state.monthlyBudgets[m].income = +mIncomeEl.value || 0;
+    saveState();render();
+  };
+  mFixedEl.onchange = ()=>{
+    if(!state.monthlyFixedOverride) state.monthlyFixedOverride = {};
+    const v = mFixedEl.value;
+    state.monthlyFixedOverride[m] = (v==='' ? null : (+v||0));
+    saveState();render();
+  };
   document.getElementById('mVar').textContent = fmt(varTotal);
   const netEl = document.getElementById('mNet');
   netEl.textContent = (net>=0?'+':'') + fmt(Math.abs(net));
@@ -2239,15 +2273,18 @@ function renderAnnual(){
   tbl.innerHTML = `
     <div class="ann-table">
       <div class="ann-row header">
-        <div>月</div><div>収入</div><div>固定費</div><div>変動費目標</div><div>変動費実績</div><div>その他</div><div>収支</div><div>残高</div>
+        <div>月</div><div>収入</div><div>固定費</div><div>変動費目標</div><div>日予算</div><div>変動費実績</div><div>その他</div><div>収支</div><div>残高</div>
       </div>
       ${data.map(d=>{
         const o = state.annualOverrides[d.month] || {};
+        const mb = state.monthlyBudgets[d.month] || {};
+        const autoDaily = Math.round((mb.variable||0)/MONTH_DAYS[d.month]);
         return `<div class="ann-row" data-month="${d.month}">
           <div class="m">${d.month}月</div>
           <input class="ann-in" data-f="income"    value="${o.income!=null?o.income:d.income}">
           <input class="ann-in" data-f="fixed"     value="${o.fixed!=null?o.fixed:d.fixed}">
           <div class="t">${fmt(d.varTarget)}</div>
+          <input class="ann-in" data-fd="daily"    value="${mb.daily!=null&&mb.daily!==''?mb.daily:''}" placeholder="${autoDaily}">
           <input class="ann-in" data-f="varActual" value="${o.varActual!=null?o.varActual:d.varActual}" placeholder="${d.varTarget}">
           <input class="ann-in" data-f="other"     value="${o.other!=null?o.other:''}" placeholder="0">
           <div class="net ${d.actualNet>=0?'g':'b'}">${(d.actualNet>=0?'+':'')+fmt(Math.abs(d.actualNet))}</div>
@@ -2259,7 +2296,16 @@ function renderAnnual(){
   // Edit handlers
   tbl.querySelectorAll('.ann-row[data-month]').forEach(row=>{
     const m = +row.dataset.month;
-    row.querySelectorAll('.ann-in').forEach(inp=>{
+    // 日予算入力（settings側のmonthlyBudgets.dailyを更新）
+    row.querySelectorAll('[data-fd="daily"]').forEach(inp=>{
+      inp.oninput = ()=>{
+        if(!state.monthlyBudgets[m]) state.monthlyBudgets[m] = {...DEFAULT_BUDGETS[m]};
+        const v = inp.value;
+        state.monthlyBudgets[m].daily = (v===''?null:+v);
+        saveState();
+      };
+    });
+    row.querySelectorAll('.ann-in[data-f]').forEach(inp=>{
       inp.oninput = ()=>{
         if(!state.annualOverrides[m]) state.annualOverrides[m] = {income:null,fixed:null,varActual:null,other:null};
         const v = inp.value === '' ? null : +inp.value;
@@ -2543,7 +2589,13 @@ document.getElementById('resetData').onclick = ()=>{
   }
 };
 
-window.addEventListener('resize',()=>{if(document.getElementById('sec-annual').classList.contains('active')) renderAnnual()});
+window.addEventListener('resize',()=>{
+  const sv = computeCurrentSavings();
+  const rk = getRank(sv);
+  renderCastle(rk);
+  renderParticles(rk);
+  if(document.getElementById('sec-annual').classList.contains('active')) renderAnnual();
+});
 
 // 初回ロード: 既得バッジを静かに登録(NEW表示は次回の達成時のみ)
 (function initAchievements(){

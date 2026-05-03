@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>城防衛クエスト家計簿</title>
+<style>
+:root{
+  --bg1:#1a1d2e;--bg2:#2a2640;
+  --panel:rgba(18,20,34,.62);--panel2:rgba(18,20,34,.78);
+  --border:rgba(255,255,255,.16);--text:#f4f1e8;--muted:#a8aec0;
+  --gold:#d4a64a;--accent:#7fb0ff;--good:#5dd39e;--bad:#ff5b85;--warn:#ffb84d;
+  --sky-a:#1a1d2e;--sky-b:#2a2640;--ground:#3a2e1f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  background:linear-gradient(180deg,var(--sky-a) 0%,var(--sky-b) 60%,var(--ground) 100%);
+  color:var(--text);min-height:100vh;transition:background 1.2s ease;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
+
+/* Header */
+header{
+  display:flex;flex-direction:column;gap:14px;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:18px;padding:18px;backdrop-filter:blur(8px);
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.title{font-size:18px;font-weight:700;letter-spacing:.5px}
+.title small{color:var(--muted);font-weight:500;font-size:12px;display:block;margin-top:2px}
+.savings-pill{
+  background:linear-gradient(135deg,#3d2f1a,#5b4423);border:1px solid var(--gold);
+  padding:10px 16px;border-radius:14px;text-align:right;
+  box-shadow:0 0 24px rgba(212,166,74,.18) inset;
+}
+.savings-pill .label{font-size:11px;color:var(--gold);letter-spacing:1px}
+.savings-pill .value{font-size:22px;font-weight:800;color:#fff;font-feature-settings:"tnum"}
+
+/* Castle */
+.castle-stage{
+  position:relative;height:240px;border-radius:14px;overflow:hidden;
+  background:linear-gradient(180deg,#16182a 0%,#3d3050 70%,#5a3f2a 100%);
+  border:1px solid var(--border);
+}
+.castle-stage svg{position:absolute;inset:0;width:100%;height:100%}
+.rank-badge{
+  position:absolute;left:14px;top:14px;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(6px);
+  border:1px solid var(--gold);padding:6px 12px;border-radius:999px;
+  font-size:12px;letter-spacing:1px;
+}
+.rank-badge b{color:var(--gold)}
+.progress-bar{
+  position:absolute;left:14px;right:14px;bottom:14px;
+  background:rgba(0,0,0,.5);border-radius:10px;overflow:hidden;height:22px;
+}
+.progress-bar .fill{
+  height:100%;background:linear-gradient(90deg,#d4a64a,#ffd97a);
+  transition:width .8s cubic-bezier(.2,.7,.2,1);
+}
+.progress-bar .text{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:11px;letter-spacing:.5px;text-shadow:0 1px 2px #000;
+}
+
+/* Tabs */
+nav.tabs{
+  display:flex;gap:4px;margin-top:14px;background:var(--panel);
+  border:1px solid var(--border);border-radius:12px;padding:4px;overflow-x:auto;
+}
+nav.tabs button{
+  flex:1;min-width:80px;background:transparent;border:none;color:var(--muted);
+  padding:10px 8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;
+  font-family:inherit;transition:.2s;white-space:nowrap;
+}
+nav.tabs button.active{background:var(--panel2);color:var(--text);box-shadow:0 0 0 1px var(--border)}
+nav.tabs button:hover:not(.active){color:var(--text)}
+
+/* Cards */
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:16px;margin-top:12px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.card h3{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:1px;margin-bottom:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:560px){.grid3{grid-template-columns:1fr 1fr}}
+
+/* Cheer card (oracle/herald) */
+.cheer-card{
+  display:flex;align-items:center;gap:14px;
+  background:linear-gradient(135deg,rgba(20,30,55,.78),rgba(15,40,40,.65));
+  border:1px solid rgba(127,176,255,.4);
+  border-radius:14px;padding:14px 16px;margin-top:12px;
+  position:relative;overflow:hidden;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.cheer-card::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 50%,rgba(127,176,255,.12),transparent 60%);
+  pointer-events:none;
+}
+.cheer-card.mood-good{
+  background:linear-gradient(135deg,rgba(15,45,30,.78),rgba(15,40,55,.6));
+  border-color:rgba(93,211,158,.5);
+}
+.cheer-card.mood-epic{
+  background:linear-gradient(135deg,rgba(60,40,15,.78),rgba(70,55,15,.6));
+  border-color:var(--gold);
+  box-shadow:0 0 18px rgba(212,166,74,.25);
+}
+.cheer-card.mood-tight{
+  background:linear-gradient(135deg,rgba(60,40,15,.78),rgba(50,30,10,.6));
+  border-color:rgba(255,184,77,.5);
+}
+.cheer-card.mood-warn{
+  background:linear-gradient(135deg,rgba(55,15,25,.82),rgba(60,35,15,.65));
+  border-color:rgba(255,91,133,.5);
+}
+.cheer-card .cheer-icon{flex-shrink:0;animation:bob 2.8s ease-in-out infinite}
+.cheer-streak{
+  display:inline-block;font-size:10px;letter-spacing:1px;
+  background:rgba(0,0,0,.3);color:var(--gold);
+  padding:2px 8px;border-radius:99px;margin-bottom:4px;font-weight:700;
+}
+.cheer-card.mood-epic .cheer-streak{background:var(--gold);color:#1a1d2e}
+.cheer-headline{font-size:15px;font-weight:800;color:#fff;line-height:1.3}
+.cheer-message{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+.cheer-body{flex:1;min-width:0}
+
+/* Treasure chest (surplus) */
+.treasure-card{
+  display:flex;align-items:center;gap:14px;
+  background:linear-gradient(135deg,rgba(60,45,15,.78),rgba(40,32,15,.65));
+  border:1px solid rgba(212,166,74,.5);
+  border-radius:14px;padding:14px 16px;margin-top:12px;
+  position:relative;overflow:hidden;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.treasure-card::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 80% 20%,rgba(255,217,122,.18),transparent 60%);
+  pointer-events:none;
+}
+.treasure-card.empty{opacity:.7;filter:saturate(.4)}
+.treasure-card.in-debt{
+  background:linear-gradient(135deg,rgba(50,18,30,.85),rgba(45,30,20,.65));
+  border-color:rgba(255,91,133,.55);
+}
+.treasure-card.in-debt::before{
+  background:radial-gradient(circle at 80% 20%,rgba(255,107,139,.18),transparent 60%);
+}
+.treasure-card.in-debt .treasure-icon{filter:saturate(.3) brightness(.7);transform:rotate(-8deg)}
+.treasure-card.in-debt .treasure-label{color:var(--bad)}
+.treasure-icon{flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .3s,filter .3s}
+.treasure-card.has-coins .treasure-icon{animation:bob 2.5s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.treasure-label{font-size:11px;color:var(--gold);letter-spacing:1px;font-weight:700}
+.treasure-amount{font-size:24px;font-weight:800;color:#fff;font-feature-settings:"tnum";margin-top:2px}
+.treasure-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.treasure-card.has-coins .treasure-amount{
+  background:linear-gradient(135deg,#ffe478,#d4a64a);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.treasure-card.in-debt .treasure-amount{color:var(--bad)}
+
+/* Daily summary */
+.daily-budget{
+  background:linear-gradient(135deg,rgba(15,40,30,.85),rgba(25,55,40,.7));
+  border:1px solid rgba(93,211,158,.45);
+  padding:14px;border-radius:12px;margin-bottom:10px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.daily-budget.over{
+  background:linear-gradient(135deg,rgba(50,18,30,.88),rgba(60,30,40,.72));
+  border-color:rgba(255,91,133,.5);
+}
+.daily-budget .top{display:flex;justify-content:space-between;align-items:baseline}
+.daily-budget .label{font-size:11px;color:var(--muted);letter-spacing:1px}
+.daily-budget .amount{font-size:28px;font-weight:800;font-feature-settings:"tnum"}
+.daily-budget .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.daily-budget .ratio-bar{
+  height:6px;background:rgba(0,0,0,.3);border-radius:3px;margin-top:10px;overflow:hidden;
+}
+.daily-budget .ratio-bar .fill{height:100%;background:#5dd39e;transition:width .5s}
+.daily-budget.over .ratio-bar .fill{background:#ff6b8b}
+
+/* Inputs */
+input,select,textarea,button{font-family:inherit;font-size:14px}
+.input,.select,textarea.input{
+  background:rgba(0,0,0,.25);border:1px solid var(--border);color:var(--text);
+  padding:10px 12px;border-radius:8px;width:100%;outline:none;transition:.15s;
+}
+.input:focus,.select:focus,textarea.input:focus{border-color:var(--accent)}
+label.field{display:block}
+label.field .l{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:4px;display:block}
+.btn{
+  background:var(--gold);color:#1a1d2e;border:none;padding:11px 16px;border-radius:10px;
+  font-weight:700;cursor:pointer;transition:.15s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(212,166,74,.3)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn.ghost:hover{background:var(--panel2);box-shadow:none;transform:none}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.btn.sm{padding:6px 10px;font-size:12px}
+
+/* Categories */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+@media(max-width:560px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
+.cat-pill{
+  background:var(--panel2);border:1px solid var(--border);color:var(--text);
+  padding:10px;border-radius:10px;cursor:pointer;text-align:center;
+  font-size:13px;font-weight:600;transition:.15s;
+}
+.cat-pill.active{background:var(--gold);color:#1a1d2e;border-color:var(--gold)}
+.cat-pill:hover:not(.active){background:rgba(255,255,255,.12)}
+
+/* Expense list */
+.exp-list{display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto}
+.exp-item{
+  display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;
+  background:rgba(0,0,0,.18);border:1px solid var(--border);
+  padding:8px 10px;border-radius:8px;font-size:13px;
+}
+.exp-item .date{color:var(--muted);font-size:11px;font-feature-settings:"tnum"}
+.exp-item .cat{font-size:11px;background:var(--panel2);padding:2px 8px;border-radius:99px}
+.exp-item .amt{font-weight:700;font-feature-settings:"tnum"}
+.exp-item .x{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px}
+.exp-item .x:hover{color:var(--bad)}
+.exp-note{grid-column:2/-1;color:var(--muted);font-size:11px;margin-top:2px}
+
+/* Monthly */
+.month-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px}
+.month-tabs button{
+  background:var(--panel2);border:1px solid var(--border);color:var(--muted);
+  padding:8px 14px;border-radius:99px;cursor:pointer;font-weight:600;
+  font-size:13px;white-space:nowrap;font-family:inherit;
+}
+.month-tabs button.active{background:var(--gold);color:#1a1d2e;border-color:var(--gold)}
+
+.cat-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px}
+.cat-bar-row .name{width:70px;color:var(--muted)}
+.cat-bar-row .bar{
+  flex:1;height:22px;background:rgba(0,0,0,.25);border-radius:6px;
+  position:relative;overflow:hidden;
+}
+.cat-bar-row .bar .f{height:100%;background:linear-gradient(90deg,#7fb0ff,#5dd39e);transition:width .6s}
+.cat-bar-row .bar.over .f{background:linear-gradient(90deg,#ff6b8b,#ffb84d)}
+.cat-bar-row .val{width:90px;text-align:right;font-feature-settings:"tnum";font-size:12px}
+
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+@media(max-width:560px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi{
+  background:rgba(0,0,0,.25);border:1px solid var(--border);
+  padding:10px;border-radius:10px;
+}
+.kpi .l{font-size:10px;color:var(--muted);letter-spacing:.5px}
+.kpi .v{font-size:18px;font-weight:800;font-feature-settings:"tnum";margin-top:2px}
+.kpi .v.good{color:var(--good)}
+.kpi .v.bad{color:var(--bad)}
+
+/* Annual editable table */
+.ann-table{min-width:780px;font-feature-settings:"tnum"}
+.ann-row{
+  display:grid;
+  grid-template-columns:48px 92px 92px 92px 92px 86px 96px 110px;
+  gap:6px;align-items:center;padding:6px 4px;
+  border-top:1px solid var(--border);font-size:12px;
+}
+.ann-row.header{font-size:10px;color:var(--muted);border-top:none;letter-spacing:.5px}
+.ann-row .m{color:var(--muted);font-weight:700}
+.ann-row .t{color:var(--muted);text-align:right;padding-right:4px}
+.ann-row .ann-in{
+  background:rgba(0,0,0,.25);border:1px solid var(--border);color:var(--text);
+  padding:6px 8px;border-radius:6px;font-size:12px;width:100%;outline:none;
+  font-family:inherit;font-feature-settings:"tnum";text-align:right;
+}
+.ann-row .ann-in:focus{border-color:var(--accent);background:rgba(127,176,255,.08)}
+.ann-row .net,.ann-row .bal{text-align:right;font-weight:700}
+.ann-row .net.g,.ann-row .bal.g{color:var(--good)}
+.ann-row .net.b,.ann-row .bal.b{color:var(--bad)}
+
+/* Annual chart */
+.chart-wrap{position:relative;height:300px;margin-top:8px}
+.chart-wrap canvas{width:100%;height:100%}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:8px;justify-content:center;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px}
+
+/* Settings */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:560px){.settings-grid{grid-template-columns:1fr}}
+.month-row{
+  display:grid;grid-template-columns:60px 1fr 1fr 1fr;gap:6px;align-items:center;
+  margin-bottom:4px;font-size:12px;
+}
+.month-row .mn{color:var(--muted);font-weight:600}
+.month-row input{padding:6px 8px;font-size:12px}
+@media(max-width:560px){.month-row{grid-template-columns:50px 1fr 1fr;font-size:11px}.month-row .v3{display:none}}
+
+.section{display:none}
+.section.active{display:block}
+
+/* Confetti / coin shower */
+.confetti-container{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti{position:absolute;top:-30px;border-radius:50%;animation:fall 2.4s cubic-bezier(.2,.7,.5,1) forwards}
+.confetti.coin{
+  width:18px;height:18px;
+  background:radial-gradient(circle at 35% 35%,#fff5c2 0%,#ffd97a 40%,#7a5320 100%);
+  box-shadow:0 0 10px rgba(255,217,122,.6);border:1px solid #5a4020;
+}
+.confetti.spark{width:7px;height:7px;background:#ffd97a;box-shadow:0 0 6px #ffd97a}
+.confetti.gem{
+  width:10px;height:10px;background:#7fb0ff;border-radius:2px;
+  transform:rotate(45deg);box-shadow:0 0 8px #7fb0ff;
+}
+@keyframes fall{
+  0%{transform:translateY(-30px) rotate(0);opacity:1}
+  100%{transform:translateY(110vh) rotate(900deg);opacity:0}
+}
+.celebrate-flash{
+  position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:radial-gradient(circle at center,rgba(255,217,122,.3),transparent 60%);
+  animation:flashAnim 1s ease-out forwards;
+}
+@keyframes flashAnim{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+.level-up-banner{
+  position:fixed;top:30%;left:50%;transform:translate(-50%,-50%) scale(.6);
+  background:linear-gradient(135deg,#ffe478,#d4a64a);color:#1a1d2e;
+  padding:20px 36px;border-radius:18px;font-weight:900;
+  box-shadow:0 0 40px rgba(255,217,122,.7),0 8px 24px rgba(0,0,0,.4);
+  z-index:10000;animation:levelup 2.4s cubic-bezier(.2,.8,.2,1) forwards;
+  text-align:center;font-size:18px;letter-spacing:1px;pointer-events:none;
+}
+.level-up-banner small{display:block;font-size:11px;letter-spacing:2px;font-weight:700;margin-bottom:4px;opacity:.7}
+@keyframes levelup{
+  0%{transform:translate(-50%,-50%) scale(.4);opacity:0}
+  20%{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+  35%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  85%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-100%) scale(.9);opacity:0}
+}
+
+/* Forecast row in treasure */
+.forecast-row{
+  display:flex;gap:14px;flex-wrap:wrap;font-size:11px;
+  padding-top:10px;margin-top:10px;border-top:1px dashed rgba(255,255,255,.12);
+}
+.forecast-row .item{flex:1;min-width:100px}
+.forecast-row .item .l{color:var(--muted);font-size:10px;letter-spacing:.5px}
+.forecast-row .item .v{color:#fff;font-weight:700;font-size:13px;font-feature-settings:"tnum";margin-top:2px}
+.forecast-row .item .v.bad{color:#ff9eb1}
+.forecast-row .item .v.good{color:#9eebbe}
+
+/* Recovery mission card */
+.recovery-card{
+  background:linear-gradient(135deg,rgba(50,18,30,.85),rgba(45,30,20,.65));
+  border:1px solid rgba(255,91,133,.55);border-radius:14px;
+  padding:14px 16px;margin-top:12px;display:flex;gap:12px;align-items:flex-start;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.recovery-card .label{color:#ff8fa6}
+.recovery-card .target{background:rgba(255,91,133,.28);color:#ffc0d0}
+.recovery-card .ricon{
+  flex-shrink:0;width:42px;height:42px;border-radius:10px;
+  background:rgba(255,107,139,.18);display:flex;align-items:center;justify-content:center;
+}
+.recovery-card .rt{flex:1;min-width:0}
+.recovery-card .label{font-size:10px;color:var(--bad);letter-spacing:1px;font-weight:800}
+.recovery-card .head{font-size:14px;font-weight:800;color:#fff;margin-top:3px;line-height:1.4}
+.recovery-card .sub{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6}
+.recovery-card .target{
+  display:inline-block;background:rgba(255,107,139,.22);color:#ffb0c0;
+  padding:4px 10px;border-radius:6px;font-weight:700;
+  font-size:11px;font-feature-settings:"tnum";margin-top:6px;
+}
+
+/* Achievement badges */
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;margin-top:8px}
+.badge{
+  background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:10px;
+  padding:12px 8px;text-align:center;transition:.2s;position:relative;
+}
+.badge.unlocked{
+  background:linear-gradient(135deg,rgba(212,166,74,.18),rgba(212,166,74,.04));
+  border-color:rgba(212,166,74,.5);
+  box-shadow:0 0 14px rgba(212,166,74,.15);
+}
+.badge.locked{opacity:.4;filter:grayscale(.85)}
+.badge .bicon{
+  width:44px;height:44px;margin:0 auto 6px;border-radius:50%;
+  background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;color:var(--muted);letter-spacing:0;
+}
+.badge.unlocked .bicon{
+  background:linear-gradient(135deg,#ffe478,#d4a64a);color:#1a1d2e;
+  box-shadow:0 0 14px rgba(255,217,122,.5);
+}
+.badge .bn{font-size:11px;font-weight:700;color:var(--text);line-height:1.3;margin-top:2px}
+.badge .bd{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.4}
+.badge .bnew{
+  position:absolute;top:-5px;right:-5px;background:#ff6b8b;color:#fff;
+  font-size:9px;padding:2px 6px;border-radius:99px;font-weight:800;letter-spacing:.5px;
+  box-shadow:0 0 8px rgba(255,107,139,.5);
+}
+
+/* Rank list */
+.rank-list{display:flex;flex-direction:column;gap:4px;max-height:65vh;overflow-y:auto;padding-right:4px}
+.rank-row{
+  display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;
+  padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.18);
+  border:1px solid var(--border);transition:.15s;font-size:13px;
+}
+.rank-row.achieved{background:rgba(212,166,74,.08);border-color:rgba(212,166,74,.25)}
+.rank-row.current{
+  background:linear-gradient(135deg,#3d2f1a,#5b4423);border-color:var(--gold);
+  box-shadow:0 0 0 1px var(--gold), 0 0 18px rgba(212,166,74,.25);
+}
+.rank-row.locked{opacity:.55}
+.rank-row .num{
+  display:flex;align-items:center;justify-content:center;font-weight:800;
+  width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);
+  font-size:12px;font-feature-settings:"tnum";color:var(--muted);
+}
+.rank-row.achieved .num{background:var(--gold);color:#1a1d2e}
+.rank-row.current .num{background:#fff;color:#1a1d2e;box-shadow:0 0 12px #fff}
+.rank-row .name{font-weight:600}
+.rank-row.locked .name{color:var(--muted)}
+.rank-row .threshold{font-size:11px;color:var(--muted);font-feature-settings:"tnum"}
+.rank-row.current .threshold{color:var(--gold);font-weight:700}
+.rank-row .here{
+  font-size:10px;background:var(--gold);color:#1a1d2e;
+  padding:2px 6px;border-radius:99px;font-weight:800;letter-spacing:.5px;
+}
+.rank-row .check{color:var(--good);font-size:14px;font-weight:800}
+
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1a1d2e;border:1px solid var(--gold);color:var(--gold);
+  padding:12px 20px;border-radius:12px;opacity:0;transition:.3s;pointer-events:none;
+  font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:1000;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Particle layer over castle stage */
+.particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+.tier-badge{
+  position:absolute;right:14px;top:14px;z-index:3;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+  border:1px solid var(--gold);color:var(--gold);
+  padding:5px 12px;border-radius:99px;font-size:10px;
+  letter-spacing:2px;font-weight:800;text-transform:uppercase;
+}
+.tier-badge.t-shabby{border-color:#7d6a4a;color:#bca888}
+.tier-badge.t-house{border-color:#8a9d5a;color:#c8d99a}
+.tier-badge.t-silver{border-color:#c0c8d8;color:#e0e8f0;box-shadow:0 0 12px rgba(192,200,216,.4)}
+.tier-badge.t-gold{border-color:#ffd97a;color:#ffe8a0;box-shadow:0 0 14px rgba(255,217,122,.5)}
+.tier-badge.t-diamond{
+  border-color:#c0e8ff;color:#fff;
+  background:linear-gradient(135deg,rgba(127,176,255,.25),rgba(192,232,255,.15),rgba(255,217,122,.15));
+  box-shadow:0 0 18px rgba(192,232,255,.5);
+  animation:diamondPulse 3s ease-in-out infinite;
+}
+@keyframes diamondPulse{0%,100%{box-shadow:0 0 18px rgba(192,232,255,.5)}50%{box-shadow:0 0 28px rgba(192,232,255,.8),0 0 14px rgba(255,184,255,.4)}}
+
+/* === Particles === */
+/* Falling leaves (tier 0) */
+@keyframes leaf-fall{
+  0%{transform:translate(0,-20px) rotate(0)}
+  50%{transform:translate(15px,120px) rotate(180deg)}
+  100%{transform:translate(-10px,260px) rotate(540deg)}
+}
+.leaf{
+  position:absolute;width:10px;height:12px;
+  background:radial-gradient(ellipse at 30% 30%,#8a7a3a,#4a3a18 70%);
+  border-radius:60% 0 60% 0;opacity:.7;
+  animation:leaf-fall linear infinite;
+}
+.leaf.l2{background:radial-gradient(ellipse at 30% 30%,#6b5a28,#3a2810 70%);width:8px;height:10px}
+.leaf.l3{background:radial-gradient(ellipse at 30% 30%,#7a4a1a,#3a2010 70%);width:9px;height:11px}
+
+/* Smoke (chimney) */
+@keyframes smoke-rise{
+  0%{transform:translateY(0) scale(.4);opacity:.6}
+  100%{transform:translateY(-80px) scale(1.8);opacity:0}
+}
+.smoke{
+  position:absolute;width:14px;height:14px;
+  background:radial-gradient(circle,rgba(180,180,180,.7),transparent 70%);
+  border-radius:50%;animation:smoke-rise ease-out infinite;
+}
+.smoke.weak{background:radial-gradient(circle,rgba(120,120,120,.4),transparent 70%)}
+
+/* Cherry blossoms (tier 1) */
+@keyframes blossom-fall{
+  0%{transform:translate(0,-20px) rotate(0)}
+  50%{transform:translate(25px,120px) rotate(200deg)}
+  100%{transform:translate(-20px,260px) rotate(420deg)}
+}
+.blossom{
+  position:absolute;width:9px;height:9px;
+  background:radial-gradient(circle at 30% 30%,#ffd0e0,#ff8fa6 70%);
+  border-radius:50% 50% 50% 0;opacity:.85;
+  animation:blossom-fall linear infinite;
+  filter:drop-shadow(0 0 2px rgba(255,180,200,.4));
+}
+
+/* Stars / sparkles (tier 2 silver) */
+@keyframes twinkle{
+  0%,100%{transform:scale(0);opacity:0}
+  50%{transform:scale(1);opacity:1}
+}
+.sparkle{
+  position:absolute;width:8px;height:8px;
+  background:radial-gradient(circle,#fff,transparent 60%);
+  animation:twinkle ease-in-out infinite;
+  filter:drop-shadow(0 0 4px #fff);
+}
+.sparkle.silver{background:radial-gradient(circle,#e8edf5,transparent 60%);filter:drop-shadow(0 0 5px #c0c8d8)}
+.sparkle.gold{background:radial-gradient(circle,#ffe478,transparent 60%);filter:drop-shadow(0 0 6px #ffd97a)}
+
+/* Floating coins (tier 3 gold) */
+@keyframes coin-float{
+  0%{transform:translateY(0) rotate(0);opacity:0}
+  10%{opacity:.9}
+  90%{opacity:.9}
+  100%{transform:translateY(-220px) rotate(720deg);opacity:0}
+}
+.float-coin{
+  position:absolute;width:12px;height:12px;
+  background:radial-gradient(circle at 35% 35%,#fff5c2,#d4a64a 70%);
+  border-radius:50%;box-shadow:0 0 10px rgba(255,217,122,.7);
+  border:1px solid #b8860b;
+  animation:coin-float ease-out infinite;
+}
+.float-coin.silver{
+  background:radial-gradient(circle at 35% 35%,#fff,#a8b0c0 70%);
+  box-shadow:0 0 8px rgba(200,210,225,.7);border-color:#7d8095;
+}
+
+/* Rotating rays (tier 3 gold + 4) */
+@keyframes ray-rot{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.sun-rays{
+  position:absolute;left:50%;top:18%;width:560px;height:560px;
+  margin-left:-280px;margin-top:-280px;
+  background:conic-gradient(from 0deg,
+    transparent 0deg,rgba(255,217,122,.18) 4deg,transparent 8deg,
+    transparent 28deg,rgba(255,217,122,.14) 32deg,transparent 36deg,
+    transparent 60deg,rgba(255,217,122,.16) 64deg,transparent 68deg,
+    transparent 90deg,rgba(255,217,122,.12) 94deg,transparent 98deg,
+    transparent 130deg,rgba(255,217,122,.18) 134deg,transparent 138deg,
+    transparent 175deg,rgba(255,217,122,.14) 179deg,transparent 183deg,
+    transparent 220deg,rgba(255,217,122,.16) 224deg,transparent 228deg,
+    transparent 270deg,rgba(255,217,122,.18) 274deg,transparent 278deg,
+    transparent 315deg,rgba(255,217,122,.14) 319deg,transparent 323deg);
+  animation:ray-rot 35s linear infinite;
+  mix-blend-mode:screen;
+}
+.sun-rays.diamond{
+  background:conic-gradient(from 0deg,
+    transparent 0deg,rgba(255,255,255,.22) 4deg,transparent 8deg,
+    transparent 30deg,rgba(127,176,255,.2) 34deg,transparent 38deg,
+    transparent 60deg,rgba(255,217,122,.18) 64deg,transparent 68deg,
+    transparent 90deg,rgba(255,180,255,.18) 94deg,transparent 98deg,
+    transparent 130deg,rgba(180,255,180,.18) 134deg,transparent 138deg,
+    transparent 175deg,rgba(255,255,255,.22) 179deg,transparent 183deg,
+    transparent 220deg,rgba(127,176,255,.2) 224deg,transparent 228deg,
+    transparent 270deg,rgba(255,217,122,.18) 274deg,transparent 278deg,
+    transparent 315deg,rgba(255,180,255,.18) 319deg,transparent 323deg);
+}
+
+/* Aurora (tier 4 diamond) */
+@keyframes aurora-shift{
+  0%,100%{filter:hue-rotate(0deg);opacity:.35;transform:translateY(0)}
+  50%{filter:hue-rotate(80deg);opacity:.55;transform:translateY(-10px)}
+}
+.aurora{
+  position:absolute;inset:-20px;
+  background:
+    linear-gradient(45deg,transparent 20%,rgba(127,176,255,.18) 35%,rgba(180,255,255,.12) 50%,rgba(255,180,255,.18) 65%,transparent 80%),
+    linear-gradient(135deg,transparent 30%,rgba(212,166,74,.1) 50%,transparent 70%);
+  animation:aurora-shift 7s ease-in-out infinite;
+  mix-blend-mode:screen;
+}
+
+/* Diamond glints (tier 4) */
+@keyframes diamond-glint{
+  0%,100%{transform:rotate(0) scale(0);opacity:0}
+  30%{transform:rotate(90deg) scale(1.2);opacity:1}
+  70%{transform:rotate(270deg) scale(.8);opacity:.7}
+}
+.diamond-spark{
+  position:absolute;width:14px;height:14px;
+  background:linear-gradient(45deg,#fff,#cef0ff);
+  clip-path:polygon(50% 0%,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0% 50%,38% 38%);
+  box-shadow:0 0 16px rgba(206,240,255,.9),0 0 6px #fff;
+  animation:diamond-glint ease-in-out infinite;
+}
+.diamond-spark.pink{background:linear-gradient(45deg,#fff,#ffcef0);box-shadow:0 0 16px rgba(255,206,240,.9)}
+.diamond-spark.blue{background:linear-gradient(45deg,#fff,#a8c8ff);box-shadow:0 0 16px rgba(168,200,255,.9)}
+
+/* Window light flicker (low rank) */
+@keyframes flicker{0%,100%{opacity:.4}50%{opacity:.7}}
+#castleSvg .window-light{animation:flicker 1.4s ease-in-out infinite}
+
+/* Tier transition flash */
+@keyframes tierFlash{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+.tier-flash{
+  position:absolute;inset:0;z-index:4;pointer-events:none;
+  animation:tierFlash 1.6s ease-out forwards;
+}
+
+/* Stars in sky for high ranks */
+.star{position:absolute;background:#fff;border-radius:50%;opacity:0;transition:opacity 1s}
+.body-rank-high .star{opacity:.7}
+
+@keyframes flagWave{0%,100%{transform:skewY(0deg)}50%{transform:skewY(3deg)}}
+.flag{transform-origin:left center;animation:flagWave 3s ease-in-out infinite}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 2px #ffd97a)}50%{filter:drop-shadow(0 0 8px #ffd97a)}}
+.glow{animation:glow 2s ease-in-out infinite}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="header-top">
+    <div class="title">城防衛クエスト家計簿<small id="todayLabel"></small></div>
+    <div class="savings-pill">
+      <div class="label">資産残高</div>
+      <div class="value" id="totalSavings">¥0</div>
+    </div>
+  </div>
+  <div class="castle-stage" id="castleStage">
+    <svg id="castleSvg" viewBox="0 0 800 240" preserveAspectRatio="xMidYMax meet"></svg>
+    <div class="particles" id="particleLayer"></div>
+    <div class="tier-badge" id="tierBadge">ぼろ</div>
+    <div class="rank-badge">階級 <b id="rankNum">1</b> / 21 — <span id="rankName">ぼろ家</span></div>
+    <div class="progress-bar">
+      <div class="fill" id="progressFill" style="width:0%"></div>
+      <div class="text" id="progressText">次の昇格まで ¥0</div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="dashboard" class="active">本日</button>
+  <button data-tab="input">入力</button>
+  <button data-tab="monthly">月別</button>
+  <button data-tab="annual">年間</button>
+  <button data-tab="ranks">階級</button>
+  <button data-tab="settings">設定</button>
+</nav>
+
+<!-- DASHBOARD -->
+<section class="section active" id="sec-dashboard">
+  <div class="cheer-card" id="cheerCard">
+    <div class="cheer-icon">
+      <svg viewBox="0 0 50 60" width="54" height="64">
+        <defs>
+          <linearGradient id="robe" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#9b3a3a"/><stop offset="100%" stop-color="#5a2020"/>
+          </linearGradient>
+          <linearGradient id="crown" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffd97a"/><stop offset="100%" stop-color="#a87a20"/>
+          </linearGradient>
+        </defs>
+        <line x1="42" y1="14" x2="42" y2="56" stroke="#5a4030" stroke-width="2" stroke-linecap="round"/>
+        <rect x="34" y="22" width="14" height="20" rx="1" fill="#f4e8c8" stroke="#7a5320" stroke-width="0.6"/>
+        <line x1="36" y1="28" x2="46" y2="28" stroke="#7a5320" stroke-width="0.4"/>
+        <line x1="36" y1="32" x2="46" y2="32" stroke="#7a5320" stroke-width="0.4"/>
+        <line x1="36" y1="36" x2="44" y2="36" stroke="#7a5320" stroke-width="0.4"/>
+        <path d="M 13 32 Q 9 50 12 58 L 36 58 Q 39 50 35 32 Z" fill="url(#robe)"/>
+        <path d="M 17 32 L 24 38 L 31 32 L 28 42 L 20 42 Z" fill="#ffd97a" opacity=".5"/>
+        <circle cx="24" cy="22" r="8" fill="#ffe2c0"/>
+        <polygon points="15,15 18,8 22,12 24,6 26,12 30,8 33,15" fill="url(#crown)" stroke="#5a4020" stroke-width="0.4"/>
+        <circle cx="24" cy="9" r="1.4" fill="#c93a3a"/>
+        <circle cx="18" cy="11" r="1" fill="#7fb0ff"/>
+        <circle cx="30" cy="11" r="1" fill="#5dd39e"/>
+        <circle cx="21.5" cy="22" r="0.9" fill="#1a1d2e"/>
+        <circle cx="26.5" cy="22" r="0.9" fill="#1a1d2e"/>
+        <path d="M 21 26 Q 24 28 27 26" stroke="#1a1d2e" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+        <ellipse cx="20" cy="25" rx="1.5" ry="0.8" fill="#ff9999" opacity=".5"/>
+        <ellipse cx="28" cy="25" rx="1.5" ry="0.8" fill="#ff9999" opacity=".5"/>
+      </svg>
+    </div>
+    <div class="cheer-body">
+      <div class="cheer-streak" id="cheerStreak"></div>
+      <div class="cheer-headline" id="cheerHeadline">本日もスタート</div>
+      <div class="cheer-message" id="cheerMessage">予算内で過ごそう</div>
+    </div>
+  </div>
+
+  <div class="treasure-card" id="treasureCard">
+    <div class="treasure-icon">
+      <svg viewBox="0 0 64 48" width="56" height="42">
+        <defs>
+          <linearGradient id="chestG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#d4a64a"/>
+            <stop offset="100%" stop-color="#7a5320"/>
+          </linearGradient>
+        </defs>
+        <rect x="6" y="22" width="52" height="22" rx="2" fill="url(#chestG)" stroke="#3d2818" stroke-width="1.5"/>
+        <path d="M 6 22 Q 32 4 58 22" fill="url(#chestG)" stroke="#3d2818" stroke-width="1.5"/>
+        <rect x="28" y="26" width="8" height="10" fill="#3d2818"/>
+        <circle cx="32" cy="30" r="1.5" fill="#ffd97a"/>
+        <line x1="6" y1="32" x2="58" y2="32" stroke="#3d2818" stroke-width="1"/>
+        <circle cx="20" cy="14" r="2" fill="#ffd97a" opacity=".9"/>
+        <circle cx="44" cy="14" r="2" fill="#ffd97a" opacity=".9"/>
+        <circle cx="32" cy="10" r="2.5" fill="#ffe478"/>
+      </svg>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div class="treasure-label" id="surplusLabel">お宝箱（今月の節約分）</div>
+      <div class="treasure-amount" id="surplusAmount">¥0</div>
+      <div class="treasure-sub" id="surplusSub">日々の予算から余った分が貯まります</div>
+      <div class="forecast-row" id="forecastRow"></div>
+    </div>
+  </div>
+  <div id="recoveryHolder"></div>
+
+  <div class="card">
+    <h3>本日のデイリー予算</h3>
+    <div class="daily-budget" id="dailyBox">
+      <div class="top">
+        <div>
+          <div class="label">残り使える金額</div>
+          <div class="amount" id="dailyRemain">¥0</div>
+          <div class="sub" id="dailySub">予算 ¥0 / 使用 ¥0</div>
+        </div>
+        <div style="text-align:right">
+          <div class="label">本月予算残</div>
+          <div class="amount" id="monthRemain" style="font-size:18px">¥0</div>
+        </div>
+      </div>
+      <div class="ratio-bar"><div class="fill" id="dailyRatio" style="width:0%"></div></div>
+    </div>
+    <div id="todayList" class="exp-list"></div>
+  </div>
+
+  <div class="card">
+    <h3>クイック入力</h3>
+    <div class="cat-grid" id="quickCats"></div>
+    <div class="row" style="margin-top:10px;gap:8px">
+      <input type="number" id="quickAmount" class="input" placeholder="金額 (¥)" style="flex:1">
+      <button class="btn" id="quickSave">記録</button>
+    </div>
+    <input type="text" id="quickNote" class="input" placeholder="メモ（任意）" style="margin-top:6px">
+  </div>
+</section>
+
+<!-- INPUT -->
+<section class="section" id="sec-input">
+  <div class="card">
+    <h3>支出の記録</h3>
+    <div class="grid2" style="gap:8px">
+      <label class="field"><span class="l">日付</span><input type="date" id="inDate" class="input"></label>
+      <label class="field"><span class="l">金額</span><input type="number" id="inAmount" class="input" placeholder="¥"></label>
+    </div>
+    <label class="field" style="margin-top:8px"><span class="l">カテゴリー</span></label>
+    <div class="cat-grid" id="fullCats"></div>
+    <label class="field" style="margin-top:10px"><span class="l">メモ</span>
+      <textarea id="inNote" class="input" rows="2" placeholder="お店、内容など"></textarea>
+    </label>
+    <div class="row" style="margin-top:12px;justify-content:flex-end;gap:8px">
+      <button class="btn ghost" id="inClear">クリア</button>
+      <button class="btn" id="inSave">保存</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>最近の記録</h3>
+    <div id="recentList" class="exp-list"></div>
+  </div>
+</section>
+
+<!-- MONTHLY -->
+<section class="section" id="sec-monthly">
+  <div class="card">
+    <h3>月別カテゴリー集計</h3>
+    <div class="month-tabs" id="monthTabs"></div>
+    <div class="summary-grid">
+      <div class="kpi"><div class="l">手取り収入</div><div class="v" id="mIncome">¥0</div></div>
+      <div class="kpi"><div class="l">固定費</div><div class="v" id="mFixed">¥0</div></div>
+      <div class="kpi"><div class="l">変動費(実績)</div><div class="v" id="mVar">¥0</div></div>
+      <div class="kpi"><div class="l">月間収支</div><div class="v" id="mNet">¥0</div></div>
+    </div>
+    <div style="margin-top:14px" id="catBars"></div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)" id="varBudgetInfo"></div>
+  </div>
+
+  <div class="card">
+    <h3 id="mListTitle">この月の記録</h3>
+    <div id="monthList" class="exp-list"></div>
+  </div>
+</section>
+
+<!-- ANNUAL -->
+<section class="section" id="sec-annual">
+  <div class="card">
+    <h3>2026年 貯金推移</h3>
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+    <div class="legend">
+      <span><i style="background:#d4a64a"></i>実績残高</span>
+      <span><i style="background:#7fb0ff"></i>計画値（目標）</span>
+      <span><i style="background:#5dd39e"></i>月間収支</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row between" style="margin-bottom:8px">
+      <h3 style="margin:0">月次サマリー（編集可能）</h3>
+      <button class="btn ghost sm" id="resetAnnual">リセット</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+      実績は手入力。本日/入力/月別の支出記録とは独立しています。空欄なら目標値が使われます。
+    </div>
+    <div id="annualTable" style="overflow-x:auto"></div>
+  </div>
+</section>
+
+<!-- RANKS -->
+<section class="section" id="sec-ranks">
+  <div class="card">
+    <h3>階級ロードマップ（全21階級）</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">5万円ごとに階級アップ。100万円達成で「豪華絢爛な城」へ</div>
+    <div id="rankList" class="rank-list"></div>
+  </div>
+  <div class="card">
+    <h3>実績バッジ</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">城主の偉業を讃える勲章。条件達成で点灯</div>
+    <div id="badgeGrid" class="badge-grid"></div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section class="section" id="sec-settings">
+  <div class="card">
+    <h3>初期残高（4月末時点）</h3>
+    <div class="row" style="gap:8px">
+      <input type="number" id="setInitial" class="input" style="flex:1">
+      <button class="btn sm" id="saveInitial">保存</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>固定費（毎月）</h3>
+    <div id="fixedList"></div>
+    <button class="btn ghost sm" id="addFixed" style="margin-top:8px">＋ 項目を追加</button>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">※12月など特定月のみの上書きは下の月別予算で設定</div>
+  </div>
+
+  <div class="card">
+    <h3>月別予算（5月〜12月）</h3>
+    <div class="month-row" style="font-size:10px;color:var(--muted)">
+      <div></div><div>手取り</div><div>変動費目標</div><div class="v3">日予算</div>
+    </div>
+    <div id="monthlyBudgetList"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">日予算は変動費目標から自動算出されますが、手動で上書きも可能です</div>
+  </div>
+
+  <div class="card">
+    <h3>カテゴリー別の月予算（任意）</h3>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">空欄の場合は変動費目標を均等割します</div>
+    <div id="catBudgetList"></div>
+  </div>
+
+  <div class="card">
+    <h3>データ管理</h3>
+    <div class="row" style="gap:8px">
+      <button class="btn ghost sm" id="exportData">エクスポート(JSON)</button>
+      <button class="btn ghost sm" id="importBtn">インポート</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+      <button class="btn danger sm" id="resetData">全データ削除</button>
+    </div>
+  </div>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============== STATE ==============
+const STORAGE_KEY = 'castle_budget_v1';
+const CATS = ['食費','交際費','交通費','趣味','日用品','その他'];
+const MONTHS = [5,6,7,8,9,10,11,12];
+const MONTH_DAYS = {5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31};
+
+const RANKS = [
+  // Tier 0: ぼろ (idx 0-2)
+  {min:0,name:'ぼろ家',tier:0},
+  {min:50000,name:'木の小屋',tier:0},
+  {min:100000,name:'修復中の家',tier:0},
+  // Tier 1: 家 (idx 3-6)
+  {min:150000,name:'木造の家',tier:1},
+  {min:200000,name:'レンガの家',tier:1},
+  {min:250000,name:'石造りの家',tier:1},
+  {min:300000,name:'立派な館',tier:1},
+  // Tier 2: シルバー (idx 7-10)
+  {min:350000,name:'銀の砦',tier:2},
+  {min:400000,name:'銀の塔',tier:2},
+  {min:450000,name:'銀の城門',tier:2},
+  {min:500000,name:'白銀の城',tier:2},
+  // Tier 3: ゴールド (idx 11-15)
+  {min:550000,name:'黄金の門',tier:3},
+  {min:600000,name:'黄金の塔',tier:3},
+  {min:650000,name:'黄金の宮殿',tier:3},
+  {min:700000,name:'太陽の王城',tier:3},
+  {min:750000,name:'大王の宮殿',tier:3},
+  // Tier 4: ダイヤモンド (idx 16-20)
+  {min:800000,name:'水晶の城',tier:4},
+  {min:850000,name:'ダイヤの宮殿',tier:4},
+  {min:900000,name:'虹の城塞',tier:4},
+  {min:950000,name:'神々の城',tier:4},
+  {min:1000000,name:'永遠に輝く城',tier:4}
+];
+const TIER_LABELS = ['ぼろ','家','シルバー','ゴールド','ダイヤモンド'];
+
+const DEFAULT_BUDGETS = {
+  5:{income:460000,variable:130000,daily:null},
+  6:{income:460000,variable:110000,daily:null},
+  7:{income:460000,variable:110000,daily:null},
+  8:{income:460000,variable:110000,daily:null},
+  9:{income:460000,variable:150000,daily:null},
+  10:{income:490000,variable:110000,daily:null},
+  11:{income:490000,variable:110000,daily:null},
+  12:{income:490000,variable:110000,daily:null}
+};
+
+const DEFAULT_FIXED = [
+  {name:'家賃',amount:135000},
+  {name:'電話代',amount:6700},
+  {name:'習い事',amount:21000}
+];
+
+const SEED_EXPENSES = [
+  {date:'2026-05-01', cat:'食費', amount:3496, note:'削りタコかま（1kg）ストック用'},
+  {date:'2026-05-01', cat:'食費', amount:3327, note:'いろはす24本（ストック用）'},
+  {date:'2026-05-01', cat:'食費', amount:1709, note:'ジャスミン茶24本（ストック用）'},
+  {date:'2026-05-02', cat:'食費', amount:1350, note:'天ぷらそば'},
+  {date:'2026-05-02', cat:'食費', amount:116,  note:'セブン 昼食'},
+  {date:'2026-05-02', cat:'食費', amount:750,  note:'マック'},
+  {date:'2026-05-02', cat:'交通費', amount:6000, note:'交通費チャージ'},
+];
+
+// 各月の変動費合計に応じたカテゴリー内訳（合計が変動費目標と一致）
+const DEFAULT_CAT_BUDGETS = {
+  5: {食費:45000,交際費:25000,交通費:10000,趣味:25000,日用品:15000,その他:10000}, // 130,000
+  6: {食費:40000,交際費:20000,交通費:10000,趣味:20000,日用品:12000,その他:8000},  // 110,000
+  7: {食費:40000,交際費:20000,交通費:10000,趣味:20000,日用品:12000,その他:8000},
+  8: {食費:40000,交際費:20000,交通費:10000,趣味:20000,日用品:12000,その他:8000},
+  9: {食費:50000,交際費:35000,交通費:10000,趣味:30000,日用品:15000,その他:10000}, // 150,000
+  10:{食費:40000,交際費:20000,交通費:10000,趣味:20000,日用品:12000,その他:8000},
+  11:{食費:40000,交際費:20000,交通費:10000,趣味:20000,日用品:12000,その他:8000},
+  12:{食費:40000,交際費:20000,交通費:10000,趣味:20000,日用品:12000,その他:8000}
+};
+
+let state = loadState();
+
+function seedExpenses(){
+  return SEED_EXPENSES.map((e,i)=>({
+    id:`seed_${e.date}_${i}`,
+    date:e.date, cat:e.cat, amount:e.amount, note:e.note
+  }));
+}
+
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{
+      const s = JSON.parse(raw);
+      if(!Array.isArray(s.expenses)) s.expenses = [];
+      if(!Array.isArray(s.fixedCosts)) s.fixedCosts = JSON.parse(JSON.stringify(DEFAULT_FIXED));
+      if(!s.catBudgets || Object.keys(s.catBudgets).length===0){
+        s.catBudgets = JSON.parse(JSON.stringify(DEFAULT_CAT_BUDGETS));
+      }
+      if(!s.monthlyBudgets) s.monthlyBudgets = JSON.parse(JSON.stringify(DEFAULT_BUDGETS));
+      for(const m of MONTHS){
+        if(!s.monthlyBudgets[m]) s.monthlyBudgets[m] = {...DEFAULT_BUDGETS[m]};
+      }
+      // 初期支出シード（一度だけ）
+      if(!s.seededMay2026){
+        const seeds = seedExpenses();
+        const existingIds = new Set((s.expenses||[]).map(x=>x.id));
+        seeds.forEach(sd=>{ if(!existingIds.has(sd.id)) s.expenses.push(sd); });
+        s.seededMay2026 = true;
+      }
+      // 年間実績の独立データ
+      if(!s.annualOverrides){
+        s.annualOverrides = {};
+        for(const m of MONTHS) s.annualOverrides[m] = {income:null, fixed:null, varActual:null, other:null};
+      }
+      return s;
+    }catch{}
+  }
+  const ao = {};
+  for(const m of MONTHS) ao[m] = {income:null, fixed:null, varActual:null, other:null};
+  return {
+    initialBalance:391574,
+    fixedCosts:JSON.parse(JSON.stringify(DEFAULT_FIXED)),
+    fixedOverrides:{12:[{name:'家賃',amount:135000},{name:'電話代',amount:6700},{name:'習い事',amount:1500}]},
+    monthlyBudgets:JSON.parse(JSON.stringify(DEFAULT_BUDGETS)),
+    catBudgets:JSON.parse(JSON.stringify(DEFAULT_CAT_BUDGETS)),
+    annualOverrides:ao,
+    expenses:seedExpenses(),
+    seededMay2026:true,
+    selectedCat:'食費',
+    selectedMonth:5,
+  };
+}
+
+function getAnnualValue(m, field){
+  const a = state.annualOverrides?.[m]?.[field];
+  if(a != null && a !== '') return +a;
+  if(field === 'income')    return state.monthlyBudgets[m]?.income || 0;
+  if(field === 'fixed')     return getFixedTotal(m);
+  if(field === 'varActual') return state.monthlyBudgets[m]?.variable || 0;
+  if(field === 'other')     return 0;
+  return 0;
+}
+function hasAnnualOverride(m){
+  const o = state.annualOverrides?.[m];
+  if(!o) return false;
+  return o.income!=null || o.fixed!=null || o.varActual!=null || o.other!=null;
+}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+
+// ============== HELPERS ==============
+const fmt = n => '¥' + Math.round(n).toLocaleString('ja-JP');
+const fmtSigned = n => (n>=0?'+':'') + fmt(n).replace('¥', n>=0?'¥':'-¥');
+const todayStr = ()=>{const d=new Date();return d.toISOString().slice(0,10)};
+function getMonth(dateStr){return parseInt(dateStr.slice(5,7))}
+
+function getFixedTotal(month){
+  if(state.fixedOverrides && state.fixedOverrides[month]){
+    return state.fixedOverrides[month].reduce((s,f)=>s+(+f.amount||0),0);
+  }
+  return state.fixedCosts.reduce((s,f)=>s+(+f.amount||0),0);
+}
+function getDailyBudget(month){
+  const b = state.monthlyBudgets[month];
+  if(!b) return 0;
+  if(b.daily!=null && b.daily!=='') return +b.daily;
+  return Math.round(b.variable / MONTH_DAYS[month]);
+}
+function getMonthExpenses(month){
+  return state.expenses.filter(e=>getMonth(e.date)===month);
+}
+function getCategoryBudget(month,cat){
+  if(state.catBudgets[month] && state.catBudgets[month][cat]!=null && state.catBudgets[month][cat]!==''){
+    return +state.catBudgets[month][cat];
+  }
+  return Math.round((state.monthlyBudgets[month]?.variable||0)/CATS.length);
+}
+
+function computeSavingsAtEndOfMonth(month){
+  let bal = state.initialBalance;
+  for(const m of MONTHS){
+    if(m>month) break;
+    const b = state.monthlyBudgets[m];
+    const fx = getFixedTotal(m);
+    const variable = getMonthExpenses(m).reduce((s,e)=>s+(+e.amount||0),0);
+    bal += (b?.income||0) - fx - variable;
+  }
+  return bal;
+}
+function computeCurrentSavings(){
+  const today = new Date();
+  const curY = today.getFullYear();
+  const curM = today.getMonth()+1;
+  let bal = state.initialBalance;
+  for(const m of MONTHS){
+    const isPast = (curY > 2026) || (curY === 2026 && m < curM);
+    if(isPast){
+      // 完了月は年間実績(オーバーライドがあればそれ、なければ目標値)
+      bal += getAnnualValue(m,'income') - getAnnualValue(m,'fixed') - getAnnualValue(m,'varActual') + getAnnualValue(m,'other');
+    } else if(hasAnnualOverride(m)){
+      // 進行中/未来月は手入力された場合のみ反映
+      bal += getAnnualValue(m,'income') - getAnnualValue(m,'fixed') - getAnnualValue(m,'varActual') + getAnnualValue(m,'other');
+    }
+  }
+  return bal;
+}
+
+function getRank(savings){
+  let idx=0;
+  for(let i=0;i<RANKS.length;i++) if(savings>=RANKS[i].min) idx=i;
+  const cur=RANKS[idx], next=RANKS[idx+1];
+  const progress = next? (savings-cur.min)/(next.min-cur.min) : 1;
+  const toNext = next? next.min - savings : 0;
+  return {idx,name:cur.name,rank:idx+1,progress:Math.max(0,Math.min(1,progress)),toNext,nextName:next?.name};
+}
+
+// ============== PARTICLES (per tier) ==============
+function getTier(idx){return RANKS[idx]?.tier ?? 0}
+
+function makeParticle(cls, opts){
+  const el = document.createElement('div');
+  el.className = cls;
+  Object.assign(el.style, opts);
+  return el;
+}
+
+function renderParticles(rank){
+  const layer = document.getElementById('particleLayer');
+  if(!layer) return;
+  layer.innerHTML = '';
+  const tier = getTier(rank.idx);
+  const idx = rank.idx;
+
+  if(tier===0){
+    // 落ち葉 + か弱い煙
+    const leafCount = 10 - idx*2; // 10/8/6
+    for(let i=0;i<leafCount;i++){
+      const cls = ['leaf','leaf l2','leaf l3'][i%3];
+      layer.appendChild(makeParticle(cls,{
+        left:(Math.random()*100)+'%',
+        top:'-12px',
+        animationDuration:(4+Math.random()*4)+'s',
+        animationDelay:(Math.random()*6)+'s',
+      }));
+    }
+    for(let i=0;i<2;i++){
+      layer.appendChild(makeParticle('smoke weak',{
+        left:'62%',
+        bottom:'42%',
+        animationDuration:(3.5+Math.random())+'s',
+        animationDelay:(i*1.6)+'s',
+      }));
+    }
+  } else if(tier===1){
+    // 元気な煙 + 桜
+    for(let i=0;i<3;i++){
+      layer.appendChild(makeParticle('smoke',{
+        left:(58+Math.random()*4)+'%',
+        bottom:'48%',
+        animationDuration:(2.6+Math.random())+'s',
+        animationDelay:(i*1.0)+'s',
+      }));
+    }
+    for(let i=0;i<6;i++){
+      layer.appendChild(makeParticle('blossom',{
+        left:(Math.random()*100)+'%',
+        top:'-12px',
+        animationDuration:(5+Math.random()*3)+'s',
+        animationDelay:(Math.random()*5)+'s',
+      }));
+    }
+  } else if(tier===2){
+    // シルバー: 煌めき + 銀コイン少量
+    for(let i=0;i<18;i++){
+      layer.appendChild(makeParticle('sparkle silver',{
+        left:(Math.random()*100)+'%',
+        top:(Math.random()*70)+'%',
+        animationDuration:(1.8+Math.random()*2.5)+'s',
+        animationDelay:(Math.random()*4)+'s',
+      }));
+    }
+    for(let i=0;i<4;i++){
+      layer.appendChild(makeParticle('float-coin silver',{
+        left:(Math.random()*100)+'%',
+        bottom:'0px',
+        animationDuration:(4.5+Math.random()*2.5)+'s',
+        animationDelay:(Math.random()*5)+'s',
+      }));
+    }
+  } else if(tier===3){
+    // ゴールド: 太陽光線 + 金貨大量 + 金のスパーク
+    layer.appendChild(makeParticle('sun-rays',{}));
+    for(let i=0;i<10;i++){
+      layer.appendChild(makeParticle('float-coin',{
+        left:(Math.random()*100)+'%',
+        bottom:'0px',
+        animationDuration:(3+Math.random()*3)+'s',
+        animationDelay:(Math.random()*4)+'s',
+      }));
+    }
+    for(let i=0;i<14;i++){
+      layer.appendChild(makeParticle('sparkle gold',{
+        left:(Math.random()*100)+'%',
+        top:(Math.random()*75)+'%',
+        animationDuration:(1.5+Math.random()*2)+'s',
+        animationDelay:(Math.random()*3)+'s',
+      }));
+    }
+  } else {
+    // ダイヤモンド: オーロラ + 虹色光線 + ダイヤの煌めき + 金貨
+    layer.appendChild(makeParticle('aurora',{}));
+    layer.appendChild(makeParticle('sun-rays diamond',{}));
+    const colors = ['','pink','blue'];
+    for(let i=0;i<18;i++){
+      const c = colors[i%3];
+      layer.appendChild(makeParticle('diamond-spark'+(c?' '+c:''),{
+        left:(Math.random()*100)+'%',
+        top:(Math.random()*80)+'%',
+        animationDuration:(1.6+Math.random()*1.8)+'s',
+        animationDelay:(Math.random()*3)+'s',
+      }));
+    }
+    for(let i=0;i<12;i++){
+      layer.appendChild(makeParticle('float-coin',{
+        left:(Math.random()*100)+'%',
+        bottom:'0px',
+        animationDuration:(2.6+Math.random()*2.5)+'s',
+        animationDelay:(Math.random()*4)+'s',
+      }));
+    }
+  }
+
+  // Tier指標バッジ更新
+  const tierBadge = document.getElementById('tierBadge');
+  if(tierBadge){
+    const cls = ['t-shabby','t-house','t-silver','t-gold','t-diamond'][tier];
+    tierBadge.className = 'tier-badge '+cls;
+    tierBadge.textContent = TIER_LABELS[tier];
+  }
+}
+
+// 階級アップ・ティアアップ祝福
+let _lastTier = null, _lastRankIdx = null;
+function celebrateRankIfNeeded(rank){
+  const tier = getTier(rank.idx);
+  if(_lastRankIdx===null){_lastRankIdx=rank.idx;_lastTier=tier;return;}
+  if(rank.idx > _lastRankIdx){
+    if(tier > _lastTier){
+      // ティア昇格 — 大規模演出
+      showLevelUp(`${TIER_LABELS[tier]}ティア突入`,'CONGRATULATIONS');
+      flashTier(tier);
+      setTimeout(()=>showCoinShower(2.2), 300);
+    } else {
+      showLevelUp(`階級${rank.rank}「${rank.name}」到達`,'RANK UP');
+    }
+  }
+  _lastRankIdx = rank.idx;
+  _lastTier = tier;
+}
+
+function flashTier(tier){
+  const stage = document.getElementById('castleStage');
+  const flash = document.createElement('div');
+  flash.className = 'tier-flash';
+  const grad = [
+    'radial-gradient(circle,rgba(180,160,120,.5),transparent 70%)',
+    'radial-gradient(circle,rgba(180,220,140,.5),transparent 70%)',
+    'radial-gradient(circle,rgba(220,230,255,.7),transparent 70%)',
+    'radial-gradient(circle,rgba(255,220,120,.8),transparent 70%)',
+    'radial-gradient(circle,rgba(255,255,255,.95),transparent 60%)',
+  ][tier];
+  flash.style.background = grad;
+  stage.appendChild(flash);
+  setTimeout(()=>flash.remove(),1700);
+}
+
+// ============== CASTLE SVG ==============
+function renderCastle(rank){
+  const svg = document.getElementById('castleSvg');
+  // sky gradient by rank
+  const skyColors = [
+    ['#1a1d2e','#3a2e1f'],   // 0-3: night-ish
+    ['#1a1d2e','#3a2e1f'],
+    ['#252338','#3d2e1f'],
+    ['#2c2944','#4a382a'],
+    ['#33335a','#5a4a35'],   // 4
+    ['#3d3d6e','#6a5538'],
+    ['#4f4280','#785a3d'],
+    ['#6b4d8c','#7d5a3a'],   // 7-8 sunset
+    ['#8a4d7e','#7a4f33'],
+    ['#a05e6b','#7a4f33'],
+    ['#b87355','#825436'],   // 10
+    ['#c08a4a','#8d5a36'],
+    ['#d4a864','#9a6238'],
+    ['#e3c47e','#a86b3a'],
+    ['#ecd590','#b07238'],   // 14
+    ['#f5e5a8','#b8763a'],
+    ['#ffeb9d','#c07d3a'],   // 16 golden
+    ['#ffe478','#d18838'],
+    ['#ffdc55','#dc9038'],
+    ['#ffd338','#e89838'],
+    ['#ffc500','#f0a038'],   // 20 magnificent
+  ];
+  const sc = skyColors[Math.min(rank.idx, skyColors.length-1)];
+  document.body.style.background = `linear-gradient(180deg, ${sc[0]} 0%, ${sc[1]} 100%)`;
+
+  let html = '';
+  // Sky gradient & sun/moon
+  html += `<defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${sc[0]}"/>
+      <stop offset="100%" stop-color="${lighten(sc[1],10)}"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a2e1f"/>
+      <stop offset="100%" stop-color="#1a1308"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a89888"/>
+      <stop offset="100%" stop-color="#5a4f44"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0f4fa"/>
+      <stop offset="50%" stop-color="#b8c0d0"/>
+      <stop offset="100%" stop-color="#6a708a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd97a"/>
+      <stop offset="100%" stop-color="#b8860b"/>
+    </linearGradient>
+    <linearGradient id="goldFull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe8a0"/>
+      <stop offset="50%" stop-color="#ffc94a"/>
+      <stop offset="100%" stop-color="#9a6a18"/>
+    </linearGradient>
+    <linearGradient id="diamond" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#cef0ff"/>
+      <stop offset="100%" stop-color="#7fb0ff"/>
+    </linearGradient>
+    <linearGradient id="rainbow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff8fa6"/>
+      <stop offset="33%" stop-color="#ffd97a"/>
+      <stop offset="66%" stop-color="#5dd39e"/>
+      <stop offset="100%" stop-color="#7fb0ff"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7d5a3a"/>
+      <stop offset="100%" stop-color="#3d2818"/>
+    </linearGradient>
+  </defs>`;
+  html += `<rect width="800" height="240" fill="url(#sky)"/>`;
+
+  // Stars / moon (rank 5+)
+  if(rank.idx>=5){
+    for(let i=0;i<20;i++){
+      const x=Math.sin(i*7.3)*400+400, y=Math.cos(i*4.1)*60+60;
+      html += `<circle cx="${x}" cy="${y}" r="1" fill="#fff" opacity=".7"/>`;
+    }
+  }
+  // Sun (rank 8+)
+  if(rank.idx>=8 && rank.idx<14){
+    html += `<circle cx="650" cy="60" r="22" fill="#ffd97a" opacity=".8"/>`;
+  }
+  // Bright sun (rank 14+)
+  if(rank.idx>=14){
+    html += `<circle cx="650" cy="55" r="28" fill="url(#gold)" filter="url(#glow)"/>`;
+    html += `<circle cx="650" cy="55" r="38" fill="#ffd97a" opacity=".25"/>`;
+  }
+
+  // Ground
+  html += `<rect x="0" y="200" width="800" height="40" fill="url(#ground)"/>`;
+
+  // Castle town (rank 13+)
+  if(rank.idx>=13){
+    for(let i=0;i<5;i++){
+      const x=80+i*120;
+      html += `<rect x="${x}" y="185" width="40" height="15" fill="#5a4030"/>`;
+      html += `<polygon points="${x},185 ${x+20},172 ${x+40},185" fill="#7a3a2a"/>`;
+    }
+  }
+
+  const tier = getTier(rank.idx);
+
+  if(tier===0){
+    // ぼろ家 (idx 0-2) — 傾いた小屋、修復が進む
+    const tilt = [-5, -3, -1][rank.idx];
+    const repair = rank.idx; // 0=最悪, 2=少し補修
+    html += `<g transform="translate(330,140) rotate(${tilt})">
+      <rect x="0" y="20" width="140" height="60" fill="#5a4030"/>
+      <polygon points="-10,20 70,-10 150,20" fill="#3d2818"/>
+      ${repair<2?`<ellipse cx="40" cy="6" rx="5" ry="2" fill="#1a1308"/><ellipse cx="100" cy="2" rx="4" ry="2" fill="#1a1308"/>`:''}
+      <rect x="55" y="45" width="30" height="35" fill="${repair>=1?'#3d2818':'#1a1308'}"/>
+      ${repair>=1?`<circle cx="78" cy="62" r="1.5" fill="#d4a64a"/>`:''}
+      <rect x="20" y="50" width="20" height="20" fill="${repair>=2?'#1a3540':'#2a1d10'}" opacity="${repair>=2?'.7':'.6'}"/>
+      ${repair<2?`<line x1="20" y1="55" x2="40" y2="65" stroke="#5a4030" stroke-width="2"/><line x1="20" y1="65" x2="40" y2="55" stroke="#5a4030" stroke-width="2"/>`:''}
+      <line x1="0" y1="50" x2="140" y2="50" stroke="#2a1d10" stroke-width="2"/>
+      <line x1="60" y1="-5" x2="64" y2="20" stroke="#3d2818" stroke-width="3"/>
+      ${repair>=2?`<rect x="100" y="-15" width="10" height="30" fill="#3d2818"/>`:''}
+    </g>
+    ${[60,140,260,420,540,640,720].map(x=>`<ellipse cx="${x}" cy="216" rx="${4+Math.random()*4}" ry="2" fill="#5a4818" opacity=".55"/>`).join('')}`;
+  }
+  else if(tier===1){
+    // 家 (idx 3-6) — 木造→レンガ→石→館
+    const stage = rank.idx - 3; // 0..3
+    const wallFill = stage>=2 ? 'url(#stone)' : 'url(#wood)';
+    const roofFill = stage>=1 ? '#7a3a2a' : '#5a3a25';
+    const w = 180 + stage*15;
+    const h = 80 + stage*8;
+    html += `<g transform="translate(${(800-w)/2},${200-h-20})">
+      <rect x="0" y="20" width="${w}" height="${h}" fill="${wallFill}"/>
+      <polygon points="-10,20 ${w/2},-15 ${w+10},20" fill="${roofFill}"/>
+      <rect x="${w-50}" y="-25" width="14" height="35" fill="#5a4030"/>
+      <rect x="20" y="40" width="28" height="28" fill="#1a3540"/>
+      <rect x="22" y="42" width="24" height="24" fill="#ffd97a" opacity=".55" class="window-light"/>
+      <line x1="34" y1="40" x2="34" y2="68" stroke="#3d2818" stroke-width="1"/>
+      <line x1="20" y1="54" x2="48" y2="54" stroke="#3d2818" stroke-width="1"/>
+      <rect x="${w-50}" y="40" width="28" height="28" fill="#1a3540"/>
+      <rect x="${w-48}" y="42" width="24" height="24" fill="#ffd97a" opacity=".55" class="window-light"/>
+      <rect x="${w/2-15}" y="${h-40}" width="30" height="40" fill="#3d2818"/>
+      <circle cx="${w/2+8}" cy="${h-20}" r="2" fill="#d4a64a"/>
+      ${stage>=1?`<rect x="${w+15}" y="${h-30}" width="6" height="30" fill="#5a3a25"/><circle cx="${w+18}" cy="${h-32}" r="14" fill="#3a5a25"/><circle cx="${w+10}" cy="${h-30}" r="10" fill="#4a6a35"/><circle cx="${w+26}" cy="${h-28}" r="10" fill="#4a6a35"/>`:''}
+      ${stage>=2?`<rect x="-30" y="${h-30}" width="6" height="30" fill="#5a3a25"/><circle cx="-27" cy="${h-32}" r="12" fill="#3a5a25"/>`:''}
+      ${stage>=3?`<rect x="-15" y="${h+10}" width="${w+30}" height="6" fill="url(#stone)"/>`:''}
+    </g>`;
+  }
+  else if(tier===2){
+    // シルバー (idx 7-10)
+    html += castleSilver(rank.idx);
+  }
+  else if(tier===3){
+    // ゴールド (idx 11-15)
+    html += castleGold(rank.idx);
+  }
+  else {
+    // ダイヤモンド (idx 16-20)
+    html += castleDiamond(rank.idx);
+  }
+
+  svg.innerHTML = html;
+}
+
+function castleSilver(idx){
+  const v = idx - 7; // 0..3
+  let s = `<g>
+    <rect x="285" y="95" width="230" height="105" fill="url(#silver)"/>
+    <rect x="265" y="135" width="22" height="65" fill="url(#silver)"/>
+    <rect x="513" y="135" width="22" height="65" fill="url(#silver)"/>
+    <rect x="285" y="90" width="230" height="7" fill="#7d8095"/>
+    ${Array.from({length:11},(_,i)=>`<rect x="${287+i*20}" y="83" width="11" height="9" fill="#c0c8d8"/>`).join('')}
+    <rect x="320" y="55" width="32" height="65" fill="url(#silver)"/>
+    <polygon points="315,55 336,33 357,55" fill="#a0a8c0"/>
+    <rect x="448" y="55" width="32" height="65" fill="url(#silver)"/>
+    <polygon points="443,55 464,33 485,55" fill="#a0a8c0"/>
+    <rect x="378" y="140" width="44" height="60" fill="#1a1d2e"/>
+    <path d="M 378 140 Q 400 116 422 140 L 422 200 L 378 200 Z" fill="#3d4358"/>
+    <rect x="328" y="80" width="16" height="22" fill="#5e6e8a"/>
+    <rect x="330" y="82" width="12" height="18" fill="#a8c0e0" class="window-light"/>
+    <rect x="456" y="80" width="16" height="22" fill="#5e6e8a"/>
+    <rect x="458" y="82" width="12" height="18" fill="#a8c0e0" class="window-light"/>
+    <rect x="320" y="130" width="22" height="22" fill="#5e6e8a"/>
+    <rect x="322" y="132" width="18" height="18" fill="#a8c0e0" class="window-light"/>
+    <rect x="458" y="130" width="22" height="22" fill="#5e6e8a"/>
+    <rect x="460" y="132" width="18" height="18" fill="#a8c0e0" class="window-light"/>
+  </g>`;
+  if(v>=1) s += flag(336,30,'#c0c8d8') + flag(464,30,'#c0c8d8');
+  if(v>=2){
+    s += `<rect x="285" y="200" width="230" height="4" fill="#7d8095"/>`;
+    s += `<circle cx="400" cy="115" r="6" fill="#e8edf5" stroke="#7d8095" stroke-width="0.6"/>`;
+    s += `<circle cx="400" cy="115" r="2.5" fill="#7d8095"/>`;
+  }
+  if(v>=3){
+    s += `<rect x="265" y="200" width="270" height="6" fill="#a0a8c0"/>`;
+    s += flag(400,15,'#e8edf5');
+    s += `<rect x="392" y="155" width="16" height="40" fill="url(#silver)"/>`;
+  }
+  return s;
+}
+
+function castleGold(idx){
+  const v = idx - 11; // 0..4
+  let s = `<g>
+    <rect x="260" y="80" width="280" height="120" fill="url(#goldFull)"/>
+    <rect x="240" y="120" width="25" height="80" fill="url(#goldFull)"/>
+    <rect x="535" y="120" width="25" height="80" fill="url(#goldFull)"/>
+    <rect x="260" y="75" width="280" height="8" fill="#9a6a18"/>
+    ${Array.from({length:13},(_,i)=>`<rect x="${262+i*22}" y="68" width="12" height="10" fill="url(#gold)"/>`).join('')}
+    <rect x="290" y="30" width="40" height="80" fill="url(#goldFull)"/>
+    <polygon points="285,30 310,5 335,30" fill="#c93a3a"/>
+    <rect x="380" y="0" width="40" height="100" fill="url(#goldFull)"/>
+    <polygon points="375,0 400,-25 425,0" fill="#c93a3a"/>
+    <rect x="470" y="30" width="40" height="80" fill="url(#goldFull)"/>
+    <polygon points="465,30 490,5 515,30" fill="#c93a3a"/>
+    <rect x="370" y="140" width="60" height="60" fill="#3d2818"/>
+    <path d="M 370 140 Q 400 110 430 140 L 430 200 L 370 200 Z" fill="#5a3a25"/>
+    <rect x="298" y="55" width="10" height="14" fill="#1a1308"/>
+    <rect x="312" y="55" width="10" height="14" fill="#1a1308"/>
+    <rect x="478" y="55" width="10" height="14" fill="#1a1308"/>
+    <rect x="492" y="55" width="10" height="14" fill="#1a1308"/>
+    <rect x="392" y="35" width="16" height="20" fill="#ffe478" class="window-light"/>
+  </g>`;
+  s += flag(280,15,'#c93a3a') + flag(515,15,'#c93a3a') + flag(400,-5,'url(#gold)');
+  if(v>=1){
+    s += `<rect x="240" y="178" width="20" height="8" fill="#3d2818"/>`;
+    s += `<rect x="540" y="178" width="20" height="8" fill="#3d2818"/>`;
+    s += `<circle cx="245" cy="190" r="4" fill="#1a1308"/>`;
+    s += `<circle cx="555" cy="190" r="4" fill="#1a1308"/>`;
+  }
+  if(v>=2){
+    s += `<rect x="395" y="160" width="10" height="35" fill="url(#gold)"/>`;
+    s += `<circle cx="400" cy="125" r="5" fill="url(#gold)"/>`;
+  }
+  if(v>=3){
+    s += `<rect x="370" y="158" width="8" height="22" fill="url(#gold)"/>`;
+    s += `<circle cx="374" cy="156" r="4" fill="url(#gold)"/>`;
+    s += `<rect x="422" y="158" width="8" height="22" fill="url(#gold)"/>`;
+    s += `<circle cx="426" cy="156" r="4" fill="url(#gold)"/>`;
+  }
+  if(v>=4){
+    // Crown above center spire
+    s += `<polygon points="385,-30 392,-45 400,-35 408,-45 415,-30" fill="url(#gold)"/>`;
+    s += `<circle cx="392" cy="-43" r="2" fill="#c93a3a"/>`;
+    s += `<circle cx="408" cy="-43" r="2" fill="#7fb0ff"/>`;
+    // Gold piles at base
+    s += `<circle cx="200" cy="208" r="4" fill="url(#gold)"/>`;
+    s += `<circle cx="206" cy="210" r="3" fill="url(#gold)"/>`;
+    s += `<circle cx="595" cy="210" r="4" fill="url(#gold)"/>`;
+    s += `<circle cx="601" cy="208" r="3" fill="url(#gold)"/>`;
+  }
+  return s;
+}
+
+function castleDiamond(idx){
+  const v = idx - 16; // 0..4
+  let s = `<g>
+    <rect x="200" y="55" width="400" height="145" fill="url(#diamond)" opacity=".92"/>
+    <rect x="180" y="95" width="25" height="105" fill="url(#diamond)" opacity=".92"/>
+    <rect x="595" y="95" width="25" height="105" fill="url(#diamond)" opacity=".92"/>
+    <rect x="200" y="50" width="400" height="8" fill="url(#rainbow)" opacity=".55"/>
+    ${Array.from({length:18},(_,i)=>`<polygon points="${204+i*22},48 ${211+i*22},38 ${218+i*22},48" fill="url(#diamond)"/>`).join('')}
+    <rect x="240" y="0" width="50" height="80" fill="url(#diamond)" opacity=".92"/>
+    <polygon points="235,0 265,-30 295,0" fill="url(#rainbow)" opacity=".75"/>
+    <polygon points="248,0 265,-25 282,0" fill="#fff" opacity=".55"/>
+    <circle cx="265" cy="-32" r="4" fill="#fff"/>
+    <circle cx="265" cy="-32" r="8" fill="#fff" opacity=".4"/>
+    <rect x="510" y="0" width="50" height="80" fill="url(#diamond)" opacity=".92"/>
+    <polygon points="505,0 535,-30 565,0" fill="url(#rainbow)" opacity=".75"/>
+    <polygon points="518,0 535,-25 552,0" fill="#fff" opacity=".55"/>
+    <circle cx="535" cy="-32" r="4" fill="#fff"/>
+    <circle cx="535" cy="-32" r="8" fill="#fff" opacity=".4"/>
+    <rect x="370" y="-50" width="60" height="120" fill="url(#diamond)"/>
+    <polygon points="365,-50 400,-100 435,-50" fill="url(#rainbow)" opacity=".8"/>
+    <polygon points="380,-50 400,-92 420,-50" fill="#fff" opacity=".6"/>
+    <circle cx="400" cy="-105" r="7" fill="#fff"/>
+    <circle cx="400" cy="-105" r="14" fill="#fff" opacity=".35"/>
+    <path d="M 360 140 Q 400 80 440 140 L 440 200 L 360 200 Z" fill="url(#rainbow)" opacity=".55"/>
+    <path d="M 368 140 Q 400 92 432 140 L 432 195 L 368 195 Z" fill="url(#diamond)" opacity=".95"/>
+    ${[230,300,470,540].map(x=>`<polygon points="${x+9},88 ${x+18},103 ${x+9},118 ${x},103" fill="url(#rainbow)" opacity=".7"/><polygon points="${x+9},94 ${x+14},103 ${x+9},112 ${x+4},103" fill="#fff" opacity=".6"/>`).join('')}
+    <polygon points="400,42 425,72 400,102 375,72" fill="url(#rainbow)"/>
+    <polygon points="400,50 418,72 400,94 382,72" fill="#fff" opacity=".55"/>
+  </g>`;
+  if(v>=1){
+    s += `<circle cx="220" cy="86" r="6" fill="#fff" opacity=".85"/>`;
+    s += `<circle cx="220" cy="86" r="11" fill="#fff" opacity=".25"/>`;
+    s += `<circle cx="580" cy="86" r="6" fill="#fff" opacity=".85"/>`;
+    s += `<circle cx="580" cy="86" r="11" fill="#fff" opacity=".25"/>`;
+  }
+  if(v>=2){
+    s += flag(243,-10,'#ff8fa6') + flag(557,-10,'#7fb0ff') + flag(400,-32,'url(#rainbow)');
+  }
+  if(v>=3){
+    // crystal knights
+    s += `<rect x="370" y="158" width="8" height="22" fill="url(#diamond)"/>`;
+    s += `<circle cx="374" cy="156" r="4" fill="url(#rainbow)"/>`;
+    s += `<rect x="422" y="158" width="8" height="22" fill="url(#diamond)"/>`;
+    s += `<circle cx="426" cy="156" r="4" fill="url(#rainbow)"/>`;
+    // floating diamonds
+    s += `<polygon points="160,80 168,90 160,100 152,90" fill="url(#diamond)" opacity=".8"/>`;
+    s += `<polygon points="640,80 648,90 640,100 632,90" fill="url(#diamond)" opacity=".8"/>`;
+  }
+  if(v>=4){
+    // Divine crown halo
+    s += `<polygon points="380,-118 388,-138 395,-122 400,-145 405,-122 412,-138 420,-118" fill="url(#rainbow)" opacity=".85"/>`;
+    s += `<circle cx="400" cy="-128" r="3" fill="#fff"/>`;
+    s += `<ellipse cx="400" cy="-110" rx="60" ry="8" fill="url(#rainbow)" opacity=".3"/>`;
+    // mass diamond piles
+    s += `<polygon points="170,210 175,200 180,210" fill="url(#diamond)"/>`;
+    s += `<polygon points="620,210 625,200 630,210" fill="url(#diamond)"/>`;
+    s += `<polygon points="155,212 160,205 165,212" fill="url(#rainbow)" opacity=".7"/>`;
+  }
+  return s;
+}
+
+function castleMid(stone){
+  const fill = stone? 'url(#stone)' : 'url(#wood)';
+  return `<g>
+    <rect x="290" y="100" width="220" height="100" fill="${fill}"/>
+    <rect x="270" y="140" width="20" height="60" fill="${fill}"/>
+    <rect x="510" y="140" width="20" height="60" fill="${fill}"/>
+    <polygon points="280,100 400,50 520,100" fill="#5a3a25"/>
+    <rect x="320" y="60" width="30" height="60" fill="${fill}"/>
+    <polygon points="315,60 335,40 355,60" fill="#c93a3a"/>
+    <rect x="450" y="60" width="30" height="60" fill="${fill}"/>
+    <polygon points="445,60 465,40 485,60" fill="#c93a3a"/>
+    <rect x="380" y="140" width="40" height="60" fill="#1a1308"/>
+    <rect x="385" y="145" width="30" height="40" fill="#3d2818"/>
+    <rect x="320" y="130" width="20" height="20" fill="#1a3540"/>
+    <rect x="460" y="130" width="20" height="20" fill="#1a3540"/>
+  </g>`;
+}
+function castleLarge(){
+  return `<g>
+    <rect x="260" y="80" width="280" height="120" fill="url(#stone)"/>
+    <rect x="240" y="120" width="25" height="80" fill="url(#stone)"/>
+    <rect x="535" y="120" width="25" height="80" fill="url(#stone)"/>
+    <!-- crenellations -->
+    <rect x="260" y="75" width="280" height="8" fill="#5a4f44"/>
+    ${[0,1,2,3,4,5,6,7,8,9,10,11,12].map(i=>`<rect x="${262+i*22}" y="68" width="12" height="10" fill="#a89888"/>`).join('')}
+    <rect x="290" y="30" width="40" height="80" fill="url(#stone)"/>
+    <polygon points="285,30 310,5 335,30" fill="#c93a3a"/>
+    <rect x="380" y="0" width="40" height="100" fill="url(#stone)"/>
+    <polygon points="375,0 400,-25 425,0" fill="#c93a3a"/>
+    <rect x="470" y="30" width="40" height="80" fill="url(#stone)"/>
+    <polygon points="465,30 490,5 515,30" fill="#c93a3a"/>
+    <!-- gate -->
+    <rect x="370" y="140" width="60" height="60" fill="#1a1308"/>
+    <path d="M 370 140 Q 400 110 430 140 L 430 200 L 370 200 Z" fill="#3d2818"/>
+    <!-- windows -->
+    <rect x="298" y="55" width="10" height="14" fill="#1a3540"/>
+    <rect x="312" y="55" width="10" height="14" fill="#1a3540"/>
+    <rect x="478" y="55" width="10" height="14" fill="#1a3540"/>
+    <rect x="492" y="55" width="10" height="14" fill="#1a3540"/>
+    <rect x="392" y="35" width="16" height="20" fill="#ffd97a" opacity=".5"/>
+  </g>`;
+}
+function castleRoyal(gold){
+  const accent = gold? 'url(#gold)' : '#c93a3a';
+  return `<g>
+    <rect x="230" y="60" width="340" height="140" fill="url(#stone)"/>
+    <rect x="210" y="100" width="25" height="100" fill="url(#stone)"/>
+    <rect x="565" y="100" width="25" height="100" fill="url(#stone)"/>
+    <rect x="230" y="55" width="340" height="8" fill="#5a4f44"/>
+    ${Array.from({length:16},(_,i)=>`<rect x="${232+i*21}" y="48" width="12" height="10" fill="#a89888"/>`).join('')}
+    <!-- towers -->
+    <rect x="260" y="20" width="45" height="70" fill="url(#stone)"/>
+    <polygon points="255,20 282,-10 310,20" fill="${accent}"/>
+    <circle cx="282" cy="-12" r="3" fill="${gold?'url(#gold)':'#d4a64a'}"/>
+    <rect x="495" y="20" width="45" height="70" fill="url(#stone)"/>
+    <polygon points="490,20 517,-10 545,20" fill="${accent}"/>
+    <circle cx="517" cy="-12" r="3" fill="${gold?'url(#gold)':'#d4a64a'}"/>
+    <!-- center spire -->
+    <rect x="375" y="-20" width="50" height="100" fill="url(#stone)"/>
+    <polygon points="370,-20 400,-55 430,-20" fill="${accent}"/>
+    <circle cx="400" cy="-58" r="4" fill="${gold?'url(#gold)':'#d4a64a'}"/>
+    <!-- gate with arch -->
+    <path d="M 365 140 Q 400 95 435 140 L 435 200 L 365 200 Z" fill="${gold?'url(#wood)':'#1a1308'}"/>
+    <path d="M 372 140 Q 400 105 428 140 L 428 195 L 372 195 Z" fill="#3d2818"/>
+    ${gold?`<rect x="395" y="160" width="10" height="35" fill="url(#gold)"/>`:''}
+    <!-- decorative windows (gold rims) -->
+    ${[260,310,460,510].map(x=>`<rect x="${x}" y="100" width="14" height="22" fill="${gold?'url(#gold)':'#5a4f44'}"/><rect x="${x+2}" y="102" width="10" height="18" fill="#1a3540"/>`).join('')}
+    <rect x="385" y="50" width="30" height="35" fill="${gold?'url(#gold)':'#5a4f44'}"/>
+    <rect x="388" y="53" width="24" height="29" fill="#ffd97a" opacity=".7"/>
+  </g>`;
+}
+function castleMagnificent(){
+  return `<g>
+    <rect x="200" y="50" width="400" height="150" fill="url(#stone)"/>
+    <rect x="180" y="90" width="25" height="110" fill="url(#stone)"/>
+    <rect x="595" y="90" width="25" height="110" fill="url(#stone)"/>
+    <rect x="200" y="45" width="400" height="8" fill="url(#gold)"/>
+    ${Array.from({length:18},(_,i)=>`<rect x="${204+i*22}" y="38" width="14" height="10" fill="url(#gold)"/>`).join('')}
+    <!-- corner towers -->
+    <rect x="240" y="0" width="50" height="80" fill="url(#stone)"/>
+    <polygon points="235,0 265,-30 295,0" fill="url(#gold)" filter="url(#glow)"/>
+    <rect x="510" y="0" width="50" height="80" fill="url(#stone)"/>
+    <polygon points="505,0 535,-30 565,0" fill="url(#gold)" filter="url(#glow)"/>
+    <!-- grand spire -->
+    <rect x="370" y="-40" width="60" height="110" fill="url(#stone)"/>
+    <polygon points="365,-40 400,-90 435,-40" fill="url(#gold)"/>
+    <circle cx="400" cy="-95" r="6" fill="url(#gold)"/>
+    <line x1="400" y1="-89" x2="400" y2="-101" stroke="url(#gold)" stroke-width="1"/>
+    <!-- grand gate -->
+    <path d="M 360 140 Q 400 85 440 140 L 440 200 L 360 200 Z" fill="url(#wood)"/>
+    <path d="M 368 140 Q 400 95 432 140 L 432 195 L 368 195 Z" fill="#5a3a25"/>
+    <rect x="395" y="155" width="10" height="40" fill="url(#gold)"/>
+    <circle cx="400" cy="125" r="5" fill="url(#gold)"/>
+    <!-- ornate windows -->
+    ${[230,300,470,540].map(x=>`<rect x="${x}" y="90" width="18" height="28" fill="url(#gold)"/><rect x="${x+3}" y="93" width="12" height="22" fill="#ffd97a"/>`).join('')}
+    <rect x="380" y="40" width="40" height="50" fill="url(#gold)"/>
+    <rect x="385" y="45" width="30" height="40" fill="#ffe478"/>
+  </g>`;
+}
+function flag(x,y,color){
+  return `<g class="flag" transform="translate(${x},${y})">
+    <line x1="0" y1="0" x2="0" y2="40" stroke="#5a4030" stroke-width="2"/>
+    <polygon points="0,0 25,5 0,15" fill="${color}"/>
+  </g>`;
+}
+function lighten(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)+amt, g=((n>>8)&0xff)+amt, b=(n&0xff)+amt;
+  r=Math.min(255,r);g=Math.min(255,g);b=Math.min(255,b);
+  return '#'+(r<<16|g<<8|b).toString(16).padStart(6,'0');
+}
+
+// ============== RENDER ==============
+function render(){
+  const today = todayStr();
+  document.getElementById('todayLabel').textContent = today + ' (' + ['日','月','火','水','木','金','土'][new Date().getDay()] + ')';
+  const savings = computeCurrentSavings();
+  const rank = getRank(savings);
+  document.getElementById('totalSavings').textContent = fmt(savings);
+  document.getElementById('rankNum').textContent = rank.rank;
+  document.getElementById('rankName').textContent = rank.name;
+  document.getElementById('progressFill').style.width = (rank.progress*100)+'%';
+  document.getElementById('progressText').textContent = rank.toNext>0
+    ? `次の階級「${rank.nextName}」まで ${fmt(rank.toNext)}`
+    : '最高階級に到達！';
+  document.body.classList.toggle('body-rank-high', rank.idx>=10);
+  renderCastle(rank);
+  renderParticles(rank);
+  celebrateRankIfNeeded(rank);
+  renderRankList(savings, rank);
+  renderAchievements();
+  renderCheer();
+  renderDashboard();
+  renderForecast();
+  renderRecovery();
+  renderInputCats();
+  renderRecent();
+  renderMonthly();
+  renderAnnual();
+  renderSettings();
+}
+
+function renderRankList(savings, rank){
+  const el = document.getElementById('rankList');
+  el.innerHTML = RANKS.map((r,i)=>{
+    const achieved = savings >= r.min;
+    const isCurrent = i === rank.idx;
+    const cls = isCurrent ? 'current' : (achieved ? 'achieved' : 'locked');
+    const right = isCurrent
+      ? `<span class="here">現在地</span>`
+      : (achieved ? `<span class="check">✓</span>` : `<span class="threshold">${fmt(r.min - savings)}不足</span>`);
+    return `<div class="rank-row ${cls}">
+      <div class="num">${i+1}</div>
+      <div>
+        <div class="name">${r.name}</div>
+        <div class="threshold">${fmt(r.min)} 〜</div>
+      </div>
+      ${right}
+    </div>`;
+  }).join('');
+  const cur = el.querySelector('.rank-row.current');
+  if(cur){
+    const offset = cur.offsetTop - el.clientHeight/2 + cur.clientHeight/2;
+    el.scrollTop = Math.max(0, offset);
+  }
+}
+
+// ===== 紙吹雪・祝福演出 =====
+function showCoinShower(intensity=1){
+  const flash = document.createElement('div');
+  flash.className = 'celebrate-flash';
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(),1000);
+  const cont = document.createElement('div');
+  cont.className = 'confetti-container';
+  const count = Math.floor(18 * intensity);
+  for(let i=0;i<count;i++){
+    const c = document.createElement('div');
+    const r = Math.random();
+    c.className = 'confetti ' + (r<0.65?'coin':r<0.88?'spark':'gem');
+    c.style.left = (3+Math.random()*94)+'%';
+    c.style.animationDelay = (Math.random()*0.4)+'s';
+    c.style.animationDuration = (1.7+Math.random()*1.2)+'s';
+    cont.appendChild(c);
+  }
+  document.body.appendChild(cont);
+  setTimeout(()=>cont.remove(),3500);
+}
+function showLevelUp(text, sub){
+  const el = document.createElement('div');
+  el.className = 'level-up-banner';
+  el.innerHTML = `<small>${sub||''}</small>${text}`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2500);
+  showCoinShower(1.5);
+}
+
+// ===== 時刻別の挨拶 =====
+function getGreeting(){
+  const h = new Date().getHours();
+  if(h>=5 && h<11) return 'おはよう、城主';
+  if(h>=11 && h<17) return 'こんにちは、城主';
+  if(h>=17 && h<22) return 'こんばんは、城主';
+  return 'お疲れ様、城主';
+}
+
+// ===== 月末予測 =====
+function computeForecast(){
+  const today = new Date();
+  const m = today.getFullYear()===2026?today.getMonth()+1:5;
+  if(!MONTHS.includes(m)) return null;
+  const variableBudget = state.monthlyBudgets[m]?.variable || 0;
+  const monthSpend = getMonthExpenses(m).reduce((s,e)=>s+(+e.amount||0),0);
+  const daysPassed = today.getDate();
+  const totalDays = MONTH_DAYS[m];
+  let projectedMonthSpend = monthSpend;
+  if(daysPassed > 1){
+    const completed = daysPassed - 1;
+    projectedMonthSpend = (monthSpend / completed) * totalDays;
+  }
+  const projectedSurplus = variableBudget - projectedMonthSpend;
+  // 次階級ETA
+  const savings = computeCurrentSavings();
+  const rank = getRank(savings);
+  let avgMonthlyNet = 0;
+  for(const mm of MONTHS){
+    avgMonthlyNet += (state.monthlyBudgets[mm]?.income||0) - getFixedTotal(mm) - (state.monthlyBudgets[mm]?.variable||0);
+  }
+  avgMonthlyNet /= MONTHS.length;
+  const dailyAvgNet = avgMonthlyNet / 30;
+  const daysToNext = (rank.toNext>0 && dailyAvgNet>0) ? Math.ceil(rank.toNext/dailyAvgNet) : null;
+  return {projectedSurplus, daysToNext, nextRankName:rank.nextName};
+}
+
+function renderForecast(){
+  const fc = computeForecast();
+  const el = document.getElementById('forecastRow');
+  if(!fc){el.innerHTML='';return;}
+  el.innerHTML = `
+    <div class="item">
+      <div class="l">月末予測 (現ペース)</div>
+      <div class="v ${fc.projectedSurplus>=0?'good':'bad'}">${(fc.projectedSurplus>=0?'+':'-')+fmt(Math.abs(Math.round(fc.projectedSurplus)))}</div>
+    </div>
+    ${(fc.daysToNext!=null && fc.daysToNext<730) ? `
+      <div class="item">
+        <div class="l">次階級「${fc.nextRankName}」まで</div>
+        <div class="v">約${fc.daysToNext}日</div>
+      </div>` : ''}
+  `;
+}
+
+// ===== リカバリー作戦 =====
+function computeRecovery(){
+  const today = new Date();
+  const m = today.getFullYear()===2026?today.getMonth()+1:5;
+  if(!MONTHS.includes(m)) return null;
+  const sur = computeMonthSurplus(m);
+  if(sur.surplus >= 0) return null;
+  const totalDays = MONTH_DAYS[m];
+  const remainingDays = totalDays - today.getDate() + 1;
+  if(remainingDays<=0) return null;
+  const dailyBudget = getDailyBudget(m);
+  const perDay = Math.ceil(Math.abs(sur.surplus)/remainingDays);
+  return {deficit:Math.abs(sur.surplus), remainingDays, perDay, targetDaily:Math.max(0,dailyBudget-perDay)};
+}
+
+function renderRecovery(){
+  const rec = computeRecovery();
+  const holder = document.getElementById('recoveryHolder');
+  if(!rec){holder.innerHTML='';return;}
+  holder.innerHTML = `
+    <div class="recovery-card">
+      <div class="ricon">
+        <svg viewBox="0 0 32 32" width="28" height="28">
+          <path d="M 16 4 L 26 8 L 26 18 Q 26 26 16 30 Q 6 26 6 18 L 6 8 Z" fill="#ff6b8b" fill-opacity=".22"/>
+          <path d="M 16 4 L 26 8 L 26 18 Q 26 26 16 30 Q 6 26 6 18 L 6 8 Z" fill="none" stroke="#ff6b8b" stroke-width="1.5"/>
+          <path d="M 12 16 L 15 19 L 21 12" fill="none" stroke="#ff9eb1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="rt">
+        <div class="label">リカバリー作戦</div>
+        <div class="head">残り${rec.remainingDays}日で ¥${rec.deficit.toLocaleString()} 取り戻そう</div>
+        <div class="sub">1日あたり ¥${rec.perDay.toLocaleString()} 多めに節約すれば挽回可能</div>
+        <div class="target">本日の目標: ¥${rec.targetDaily.toLocaleString()} 以下</div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== 実績バッジ =====
+const ACHIEVEMENTS = [
+  {id:'first_log', name:'初出陣', desc:'最初の支出を記録', icon:'剣', check:()=>state.expenses.length>=1},
+  {id:'streak_3', name:'三連勝', desc:'3日連続予算内', icon:'III', check:()=>computeStreak()>=3},
+  {id:'streak_7', name:'七連勝', desc:'7日連続予算内', icon:'VII', check:()=>computeStreak()>=7},
+  {id:'streak_14', name:'十四連勝', desc:'14日連続予算内', icon:'XIV', check:()=>computeStreak()>=14},
+  {id:'streak_30', name:'月間皆勤', desc:'30日連続予算内', icon:'XXX', check:()=>computeStreak()>=30},
+  {id:'frugal_day', name:'倹約家', desc:'1日¥1,000以下で過ごす', icon:'葉', check:()=>{
+    const today = new Date();
+    const m = today.getFullYear()===2026?today.getMonth()+1:5;
+    if(!MONTHS.includes(m)) return false;
+    for(let d=1;d<today.getDate();d++){
+      const ds=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const used=state.expenses.filter(e=>e.date===ds).reduce((s,e)=>s+(+e.amount||0),0);
+      const has=state.expenses.some(e=>e.date===ds);
+      if(has && used>0 && used<=1000) return true;
+    }
+    return false;
+  }},
+  {id:'zero_day', name:'無消費の日', desc:'1日支出¥0を達成', icon:'盾', check:()=>{
+    const today = new Date();
+    const m = today.getFullYear()===2026?today.getMonth()+1:5;
+    if(!MONTHS.includes(m)) return false;
+    for(let d=1;d<today.getDate();d++){
+      const ds=`2026-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const used=state.expenses.filter(e=>e.date===ds).reduce((s,e)=>s+(+e.amount||0),0);
+      const hasOther = state.expenses.some(e=>e.date!==ds);
+      if(used===0 && hasOther) return true;
+    }
+    return false;
+  }},
+  {id:'rank_5', name:'砦の主', desc:'階級5到達', icon:'砦', check:()=>getRank(computeCurrentSavings()).idx>=4},
+  {id:'rank_10', name:'城主', desc:'階級10到達', icon:'城', check:()=>getRank(computeCurrentSavings()).idx>=9},
+  {id:'rank_15', name:'王', desc:'階級15到達', icon:'王', check:()=>getRank(computeCurrentSavings()).idx>=14},
+  {id:'rank_20', name:'絢爛皇帝', desc:'最高階級到達', icon:'帝', check:()=>getRank(computeCurrentSavings()).idx>=20},
+  {id:'savings_500k', name:'王国の財', desc:'資産50万円', icon:'金', check:()=>computeCurrentSavings()>=500000},
+  {id:'savings_1m', name:'豪商', desc:'資産100万円', icon:'金金', check:()=>computeCurrentSavings()>=1000000},
+];
+
+function checkAchievements(notify=false){
+  if(!state.unlockedAchievements) state.unlockedAchievements = {};
+  const newlyUnlocked = [];
+  ACHIEVEMENTS.forEach(a=>{
+    let unlocked=false; try{unlocked=a.check()}catch{}
+    if(unlocked && !state.unlockedAchievements[a.id]){
+      state.unlockedAchievements[a.id] = Date.now();
+      newlyUnlocked.push(a);
+    }
+  });
+  if(newlyUnlocked.length && notify){
+    newlyUnlocked.forEach((a,i)=>{
+      setTimeout(()=>showLevelUp(a.name, 'バッジ獲得'), i*2700);
+    });
+  }
+  return newlyUnlocked;
+}
+
+function renderAchievements(){
+  const el = document.getElementById('badgeGrid');
+  if(!el) return;
+  if(!state.unlockedAchievements) state.unlockedAchievements = {};
+  el.innerHTML = ACHIEVEMENTS.map(a=>{
+    let unlocked=false; try{unlocked=a.check()}catch{}
+    const justUnlocked = unlocked && state.unlockedAchievements[a.id] && (Date.now()-state.unlockedAchievements[a.id] < 24*3600*1000);
+    return `<div class="badge ${unlocked?'unlocked':'locked'}">
+      ${justUnlocked?'<span class="bnew">NEW</span>':''}
+      <div class="bicon">${a.icon}</div>
+      <div class="bn">${a.name}</div>
+      <div class="bd">${a.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+function computeStreak(){
+  const today = new Date();
+  const curM = today.getFullYear()===2026 ? today.getMonth()+1 : 5;
+  if(!MONTHS.includes(curM)) return 0;
+  const dailyBudget = getDailyBudget(curM);
+  let streak = 0;
+  for(let d = today.getDate()-1; d >= 1; d--){
+    const ds = `2026-${String(curM).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const used = state.expenses.filter(e=>e.date===ds).reduce((s,e)=>s+(+e.amount||0),0);
+    if(used <= dailyBudget) streak++;
+    else break;
+  }
+  return streak;
+}
+
+const CHEER_LINES = {
+  epic_streak: ['城の守りが日に日に強くなる','見事な軍略だ、大将','王国の財が音を立てて積まれる','このまま豪華絢爛な城まで突き進め'],
+  good_streak: ['この調子で守りを固めよう','賢明な采配だ','コインが宝箱に響く音がする'],
+  saved_yesterday: ['昨日の節約が城壁を一段上げた','お宝箱に新しいコインが追加された','見えない貯金が確実に積まれている'],
+  surplus_milestone: ['節約の積み重ねが王国の財に変わる','宝箱の重みが王の風格を増す','このペースなら次の階級も近い'],
+  today_safe: ['賢く使えば、お宝箱が膨らむ','まだ余力あり、慎重に進もう','今日の選択が明日の城を強くする'],
+  today_tight: ['あと一息、予算内で締めよう','慎重に、城門を閉めるが如く','もう一品は明日に回そう'],
+  today_over: ['明日でリカバリー、まだ間に合う','次の戦いで取り戻せ','一度の損失で城は落ちぬ'],
+  rank_close: ['昇格は目の前、節約で押し切れ','次の階級が手を差し伸べている','城が新しい姿を望んでいる'],
+  fresh: ['今日の選択が城を育てる','本日も賢い消費を','デイリー予算の番人になろう'],
+};
+function pickLine(arr){
+  const idx = Math.floor((Date.now()/3600000) % arr.length);
+  return arr[idx];
+}
+
+function pickCheerMessage({streak, todayUsed, dailyBudget, todayRemain, yesterdayLeft, surplus, rankToNext, hasYesterday}){
+  if(todayUsed > dailyBudget){
+    return {
+      streakText:'',
+      headline:`本日 ¥${(todayUsed-dailyBudget).toLocaleString()} 超過`,
+      message:pickLine(CHEER_LINES.today_over), mood:'warn'
+    };
+  }
+  if(streak >= 5){
+    return {
+      streakText:`${streak}日連続で予算達成中`,
+      headline:`${streak}日連続の城防衛、お見事！`,
+      message:pickLine(CHEER_LINES.epic_streak), mood:'epic'
+    };
+  }
+  if(streak >= 2){
+    return {
+      streakText:`${streak}日連続で予算達成`,
+      headline:`連勝中！次も守り抜こう`,
+      message:pickLine(CHEER_LINES.good_streak), mood:'good'
+    };
+  }
+  if(hasYesterday && yesterdayLeft >= 1000){
+    return {
+      streakText:`連続1日`,
+      headline:`昨日 ¥${yesterdayLeft.toLocaleString()} 節約！`,
+      message:pickLine(CHEER_LINES.saved_yesterday), mood:'good'
+    };
+  }
+  if(surplus >= 10000){
+    return {
+      streakText:'',
+      headline:`お宝箱に ¥${surplus.toLocaleString()} 蓄積`,
+      message:pickLine(CHEER_LINES.surplus_milestone), mood:'epic'
+    };
+  }
+  if(rankToNext > 0 && rankToNext < 30000){
+    return {
+      streakText:'',
+      headline:`次の階級まで ¥${rankToNext.toLocaleString()}`,
+      message:pickLine(CHEER_LINES.rank_close), mood:'epic'
+    };
+  }
+  if(todayRemain >= dailyBudget * 0.5){
+    return {
+      streakText: streak>0 ? `連続${streak}日` : '',
+      headline:`本日まだ ¥${todayRemain.toLocaleString()} 余裕あり`,
+      message:pickLine(CHEER_LINES.today_safe), mood:'good'
+    };
+  }
+  if(todayRemain > 0){
+    return {
+      streakText: streak>0 ? `連続${streak}日` : '',
+      headline:`本日残り ¥${todayRemain.toLocaleString()}`,
+      message:pickLine(CHEER_LINES.today_tight), mood:'tight'
+    };
+  }
+  return {
+    streakText:'',
+    headline:'本日もスタート',
+    message:pickLine(CHEER_LINES.fresh), mood:'normal'
+  };
+}
+
+function renderCheer(){
+  const today = new Date();
+  const curM = today.getFullYear()===2026 ? today.getMonth()+1 : 5;
+  const useMonth = MONTHS.includes(curM) ? curM : 5;
+  const dailyBudget = getDailyBudget(useMonth);
+  const todayUsed = state.expenses.filter(e=>e.date===todayStr()).reduce((s,e)=>s+(+e.amount||0),0);
+  const todayRemain = dailyBudget - todayUsed;
+
+  const yest = new Date(today); yest.setDate(today.getDate()-1);
+  const yds = yest.toISOString().slice(0,10);
+  const yesterdayUsed = state.expenses.filter(e=>e.date===yds).reduce((s,e)=>s+(+e.amount||0),0);
+  const hasYesterday = state.expenses.some(e=>e.date===yds);
+  const yesterdayLeft = Math.max(0, dailyBudget - yesterdayUsed);
+
+  const streak = computeStreak();
+  const sur = computeMonthSurplus(useMonth);
+  const savings = computeCurrentSavings();
+  const rank = getRank(savings);
+
+  const msg = pickCheerMessage({
+    streak, todayUsed, dailyBudget, todayRemain,
+    yesterdayLeft, hasYesterday,
+    surplus:sur.surplus, rankToNext:rank.toNext
+  });
+
+  const card = document.getElementById('cheerCard');
+  card.className = `cheer-card mood-${msg.mood}`;
+  const sEl = document.getElementById('cheerStreak');
+  const greeting = getGreeting();
+  const streakText = msg.streakText ? `${greeting} / ${msg.streakText}` : greeting;
+  sEl.textContent = streakText;
+  sEl.style.display = 'inline-block';
+  document.getElementById('cheerHeadline').textContent = msg.headline;
+  document.getElementById('cheerMessage').textContent = msg.message;
+}
+
+function computeMonthSurplus(month){
+  const today = new Date();
+  const dailyBudget = getDailyBudget(month);
+  const days = MONTH_DAYS[month];
+  const isCurMonth = today.getFullYear()===2026 && today.getMonth()+1===month;
+  const lastDay = isCurMonth ? today.getDate()-1 : days; // past days (yesterday and before)
+  if(lastDay<=0) return {surplus:0, savedDays:0, overDays:0, todayProjected:0};
+  let surplus = 0, savedDays = 0, overDays = 0;
+  for(let d=1; d<=lastDay; d++){
+    const ds = `2026-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const used = state.expenses.filter(e=>e.date===ds).reduce((s,e)=>s+(+e.amount||0),0);
+    const left = dailyBudget - used;
+    surplus += left; // 正負どちらも累積
+    if(left>=0) savedDays++; else overDays++;
+  }
+  const todayStr2 = today.toISOString().slice(0,10);
+  const todayUsed = state.expenses.filter(e=>e.date===todayStr2).reduce((s,e)=>s+(+e.amount||0),0);
+  const todayProjected = isCurMonth ? (dailyBudget - todayUsed) : 0;
+  return {surplus, savedDays, overDays, todayProjected};
+}
+
+function renderDashboard(){
+  const today = todayStr();
+  const month = new Date().getMonth()+1;
+  const inRange = MONTHS.includes(month);
+  const useMonth = inRange ? month : 5;
+  const dailyBudget = getDailyBudget(useMonth);
+  const todayExp = state.expenses.filter(e=>e.date===today).reduce((s,e)=>s+(+e.amount||0),0);
+  const remain = dailyBudget - todayExp;
+  const ratio = dailyBudget>0 ? Math.min(1, todayExp/dailyBudget) : 0;
+  document.getElementById('dailyRemain').textContent = (remain<0?'-':'') + fmt(Math.abs(remain));
+  document.getElementById('dailySub').textContent = `予算 ${fmt(dailyBudget)} / 使用 ${fmt(todayExp)}`;
+  document.getElementById('dailyRatio').style.width = (ratio*100)+'%';
+  document.getElementById('dailyBox').classList.toggle('over', remain<0);
+
+  const monthExp = getMonthExpenses(useMonth).reduce((s,e)=>s+(+e.amount||0),0);
+  const variableBudget = state.monthlyBudgets[useMonth]?.variable || 0;
+  const monthRemain = variableBudget - monthExp;
+  document.getElementById('monthRemain').textContent = (monthRemain<0?'-':'') + fmt(Math.abs(monthRemain));
+
+  // Surplus (お宝箱) — 累積（プラス・マイナス両方）
+  const sur = computeMonthSurplus(useMonth);
+  const tCard = document.getElementById('treasureCard');
+  const amtEl = document.getElementById('surplusAmount');
+  amtEl.textContent = (sur.surplus>=0?'+':'-') + fmt(Math.abs(sur.surplus));
+  const subParts = [];
+  if(sur.savedDays>0) subParts.push(`達成${sur.savedDays}日`);
+  if(sur.overDays>0) subParts.push(`超過${sur.overDays}日`);
+  if(sur.todayProjected>0) subParts.push(`本日見込み +${fmt(sur.todayProjected)}`);
+  else if(sur.todayProjected<0) subParts.push(`本日見込み -${fmt(Math.abs(sur.todayProjected))}`);
+  if(subParts.length===0) subParts.push('日々の予算との差分が累積されます');
+  document.getElementById('surplusSub').textContent = subParts.join(' / ');
+  tCard.classList.toggle('has-coins', sur.surplus>0);
+  tCard.classList.toggle('empty', sur.surplus===0);
+  tCard.classList.toggle('in-debt', sur.surplus<0);
+  document.getElementById('surplusLabel').textContent =
+    sur.surplus<0 ? '宝箱の借り（今月の超過累積）' :
+    sur.surplus>0 ? 'お宝箱（今月の節約累積）' :
+    'お宝箱（今月の収支累積）';
+
+  const list = document.getElementById('todayList');
+  const todayList = state.expenses.filter(e=>e.date===today);
+  list.innerHTML = todayList.length? todayList.map(renderExpItem).join('') : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:14px">本日の記録はまだありません</div>';
+  attachDeleteHandlers(list);
+}
+
+function renderInputCats(){
+  const quick = document.getElementById('quickCats');
+  const full = document.getElementById('fullCats');
+  const html = CATS.map(c=>`<button class="cat-pill ${c===state.selectedCat?'active':''}" data-cat="${c}">${c}</button>`).join('');
+  quick.innerHTML = html;
+  full.innerHTML = html;
+  [...quick.querySelectorAll('.cat-pill'), ...full.querySelectorAll('.cat-pill')].forEach(btn=>{
+    btn.onclick = ()=>{
+      state.selectedCat = btn.dataset.cat;
+      saveState();renderInputCats();
+    };
+  });
+  if(!document.getElementById('inDate').value) document.getElementById('inDate').value = todayStr();
+}
+
+function renderExpItem(e,idx){
+  const id = e.id;
+  return `<div class="exp-item" data-id="${id}">
+    <span class="date">${e.date.slice(5)}</span>
+    <div><span class="cat">${e.cat}</span>${e.note?`<div class="exp-note">${escapeHtml(e.note)}</div>`:''}</div>
+    <span class="amt">${fmt(e.amount)}</span>
+    <button class="x" data-del="${id}">×</button>
+  </div>`;
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function attachDeleteHandlers(scope){
+  scope.querySelectorAll('[data-del]').forEach(b=>{
+    b.onclick = ()=>{
+      const id = b.dataset.del;
+      state.expenses = state.expenses.filter(x=>x.id!==id);
+      saveState();render();showToast('削除しました');
+    };
+  });
+}
+
+function renderRecent(){
+  const list = document.getElementById('recentList');
+  const sorted = [...state.expenses].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id)).slice(0,30);
+  list.innerHTML = sorted.length? sorted.map(renderExpItem).join('') : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:14px">記録なし</div>';
+  attachDeleteHandlers(list);
+}
+
+function renderMonthly(){
+  const tabs = document.getElementById('monthTabs');
+  tabs.innerHTML = MONTHS.map(m=>`<button data-m="${m}" class="${m===state.selectedMonth?'active':''}">${m}月</button>`).join('');
+  tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{state.selectedMonth=+b.dataset.m;saveState();renderMonthly()});
+
+  const m = state.selectedMonth;
+  const b = state.monthlyBudgets[m];
+  const fixed = getFixedTotal(m);
+  const expenses = getMonthExpenses(m);
+  const varTotal = expenses.reduce((s,e)=>s+(+e.amount||0),0);
+  const net = (b?.income||0) - fixed - varTotal;
+
+  document.getElementById('mIncome').textContent = fmt(b?.income||0);
+  document.getElementById('mFixed').textContent = fmt(fixed);
+  document.getElementById('mVar').textContent = fmt(varTotal);
+  const netEl = document.getElementById('mNet');
+  netEl.textContent = (net>=0?'+':'') + fmt(Math.abs(net));
+  netEl.className = 'v ' + (net>=0?'good':'bad');
+
+  const bars = document.getElementById('catBars');
+  bars.innerHTML = CATS.map(cat=>{
+    const used = expenses.filter(e=>e.cat===cat).reduce((s,e)=>s+(+e.amount||0),0);
+    const budget = getCategoryBudget(m,cat);
+    const ratio = budget>0? Math.min(1.5, used/budget) : 0;
+    const over = used>budget;
+    return `<div class="cat-bar-row">
+      <span class="name">${cat}</span>
+      <div class="bar ${over?'over':''}"><div class="f" style="width:${Math.min(100,ratio*100)}%"></div></div>
+      <span class="val">${fmt(used)}/<span style="color:var(--muted)">${fmt(budget)}</span></span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('varBudgetInfo').textContent = `変動費目標: ${fmt(b?.variable||0)} ／ 日予算: ${fmt(getDailyBudget(m))}`;
+
+  document.getElementById('mListTitle').textContent = `${m}月の記録 (${expenses.length}件)`;
+  const ml = document.getElementById('monthList');
+  const sorted = [...expenses].sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));
+  ml.innerHTML = sorted.length? sorted.map(renderExpItem).join('') : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:14px">記録なし</div>';
+  attachDeleteHandlers(ml);
+}
+
+function buildAnnualData(){
+  const data = MONTHS.map(m=>{
+    const income = getAnnualValue(m,'income');
+    const fixed = getAnnualValue(m,'fixed');
+    const varTarget = state.monthlyBudgets[m]?.variable || 0;
+    const varActual = getAnnualValue(m,'varActual');
+    const other = getAnnualValue(m,'other');
+    const plannedNet = income - fixed - varTarget;
+    const actualNet  = income - fixed - varActual + other;
+    return {month:m, income, fixed, varTarget, varActual, other, plannedNet, actualNet};
+  });
+  let pBal = state.initialBalance, aBal = state.initialBalance;
+  data.forEach(d=>{pBal += d.plannedNet; aBal += d.actualNet; d.plannedBal=pBal; d.actualBal=aBal;});
+  return data;
+}
+
+function renderAnnual(){
+  const data = buildAnnualData();
+  drawChart(data);
+
+  const tbl = document.getElementById('annualTable');
+  tbl.innerHTML = `
+    <div class="ann-table">
+      <div class="ann-row header">
+        <div>月</div><div>収入</div><div>固定費</div><div>変動費目標</div><div>変動費実績</div><div>その他</div><div>収支</div><div>残高</div>
+      </div>
+      ${data.map(d=>{
+        const o = state.annualOverrides[d.month] || {};
+        return `<div class="ann-row" data-month="${d.month}">
+          <div class="m">${d.month}月</div>
+          <input class="ann-in" data-f="income"    value="${o.income!=null?o.income:d.income}">
+          <input class="ann-in" data-f="fixed"     value="${o.fixed!=null?o.fixed:d.fixed}">
+          <div class="t">${fmt(d.varTarget)}</div>
+          <input class="ann-in" data-f="varActual" value="${o.varActual!=null?o.varActual:d.varActual}" placeholder="${d.varTarget}">
+          <input class="ann-in" data-f="other"     value="${o.other!=null?o.other:''}" placeholder="0">
+          <div class="net ${d.actualNet>=0?'g':'b'}">${(d.actualNet>=0?'+':'')+fmt(Math.abs(d.actualNet))}</div>
+          <div class="bal ${d.actualBal>=0?'g':'b'}">${fmt(d.actualBal)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // Edit handlers
+  tbl.querySelectorAll('.ann-row[data-month]').forEach(row=>{
+    const m = +row.dataset.month;
+    row.querySelectorAll('.ann-in').forEach(inp=>{
+      inp.oninput = ()=>{
+        if(!state.annualOverrides[m]) state.annualOverrides[m] = {income:null,fixed:null,varActual:null,other:null};
+        const v = inp.value === '' ? null : +inp.value;
+        state.annualOverrides[m][inp.dataset.f] = (isNaN(v)?null:v);
+        saveState();
+        // 残高・チャート・ヘッダー更新
+        const data2 = buildAnnualData();
+        drawChart(data2);
+        // テーブルの計算列だけ更新
+        data2.forEach(d=>{
+          const r = tbl.querySelector(`.ann-row[data-month="${d.month}"]`);
+          if(!r) return;
+          const netEl = r.querySelector('.net'), balEl = r.querySelector('.bal');
+          netEl.textContent = (d.actualNet>=0?'+':'') + fmt(Math.abs(d.actualNet));
+          netEl.className = 'net ' + (d.actualNet>=0?'g':'b');
+          balEl.textContent = fmt(d.actualBal);
+          balEl.className = 'bal ' + (d.actualBal>=0?'g':'b');
+        });
+        // ヘッダー残高と城のランク更新
+        const sv = computeCurrentSavings();
+        document.getElementById('totalSavings').textContent = fmt(sv);
+        const rank = getRank(sv);
+        document.getElementById('rankNum').textContent = rank.rank;
+        document.getElementById('rankName').textContent = rank.name;
+        document.getElementById('progressFill').style.width = (rank.progress*100)+'%';
+        document.getElementById('progressText').textContent = rank.toNext>0 ? `次の階級「${rank.nextName}」まで ${fmt(rank.toNext)}` : '最高階級に到達！';
+        renderCastle(rank);
+        renderRankList(sv, rank);
+      };
+    });
+  });
+}
+
+function drawChart(data){
+  const cv = document.getElementById('chart');
+  const dpr = window.devicePixelRatio||1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+
+  const padL=50, padR=20, padT=20, padB=30;
+  const innerW = W-padL-padR, innerH = H-padT-padB;
+  const all = [state.initialBalance, ...data.map(d=>d.actualBal), ...data.map(d=>d.plannedBal)];
+  const minV = Math.min(0, ...all);
+  const maxV = Math.max(...all, 100);
+  const range = maxV - minV || 1;
+
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,0.08)';
+  ctx.fillStyle='#9aa0b4';
+  ctx.font='10px sans-serif';
+  ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const y = padT + innerH*(i/4);
+    const v = maxV - range*(i/4);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+    ctx.fillText(Math.round(v/10000)+'万', padL-4, y+3);
+  }
+  // zero line
+  if(minV<0){
+    const zy = padT + innerH*(maxV/range);
+    ctx.strokeStyle='rgba(255,107,139,0.3)';
+    ctx.beginPath();ctx.moveTo(padL,zy);ctx.lineTo(W-padR,zy);ctx.stroke();
+  }
+
+  const xs = i => padL + innerW*((i+0.5)/(data.length+1));
+  const ys = v => padT + innerH*((maxV-v)/range);
+
+  // x labels & monthly net bars
+  ctx.fillStyle='#9aa0b4';
+  ctx.textAlign='center';
+  const barW = innerW/(data.length+1)*0.5;
+  data.forEach((d,i)=>{
+    const x = xs(i);
+    ctx.fillStyle='#9aa0b4';
+    ctx.fillText(d.month+'月', x, H-padB+14);
+    // Net bar
+    const zy = padT + innerH*(maxV/range);
+    const by = ys(Math.max(d.actualNet,0)+ (state.initialBalance>0?0:0));
+    // simpler: draw monthly net as light bar at bottom
+    const netH = Math.abs(d.actualNet)/range*innerH * 0.4;
+    ctx.fillStyle = d.actualNet>=0? 'rgba(93,211,158,0.4)':'rgba(255,107,139,0.4)';
+    ctx.fillRect(x-barW/2, H-padB-netH, barW, netH);
+  });
+
+  // planned line (initial -> end)
+  ctx.strokeStyle='#7fb0ff';
+  ctx.lineWidth=2;
+  ctx.setLineDash([5,4]);
+  ctx.beginPath();
+  ctx.moveTo(padL+innerW*(0.5/(data.length+1)), ys(state.initialBalance));
+  data.forEach((d,i)=>ctx.lineTo(xs(i), ys(d.plannedBal)));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // actual line
+  ctx.strokeStyle='#d4a64a';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(padL+innerW*(0.5/(data.length+1)), ys(state.initialBalance));
+  data.forEach((d,i)=>ctx.lineTo(xs(i), ys(d.actualBal)));
+  ctx.stroke();
+
+  // dots
+  data.forEach((d,i)=>{
+    ctx.fillStyle='#d4a64a';
+    ctx.beginPath();ctx.arc(xs(i),ys(d.actualBal),4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font='bold 10px sans-serif';
+    ctx.textAlign='center';
+    if(i%2===0||i===data.length-1) ctx.fillText(Math.round(d.actualBal/10000)+'万', xs(i), ys(d.actualBal)-8);
+  });
+}
+
+function renderSettings(){
+  document.getElementById('setInitial').value = state.initialBalance;
+
+  // Fixed costs
+  const fl = document.getElementById('fixedList');
+  fl.innerHTML = state.fixedCosts.map((f,i)=>`
+    <div class="row" style="gap:6px;margin-bottom:6px">
+      <input type="text" class="input" data-fname="${i}" value="${escapeHtml(f.name)}" placeholder="項目名" style="flex:1">
+      <input type="number" class="input" data-famt="${i}" value="${f.amount}" placeholder="金額" style="width:130px">
+      <button class="btn ghost sm" data-frm="${i}">×</button>
+    </div>
+  `).join('');
+  fl.querySelectorAll('[data-fname]').forEach(el=>el.oninput=e=>{state.fixedCosts[+el.dataset.fname].name=e.target.value;saveState()});
+  fl.querySelectorAll('[data-famt]').forEach(el=>el.oninput=e=>{state.fixedCosts[+el.dataset.famt].amount=+e.target.value||0;saveState();render()});
+  fl.querySelectorAll('[data-frm]').forEach(el=>el.onclick=()=>{state.fixedCosts.splice(+el.dataset.frm,1);saveState();render()});
+
+  // Monthly budgets
+  const mbl = document.getElementById('monthlyBudgetList');
+  mbl.innerHTML = MONTHS.map(m=>{
+    const b=state.monthlyBudgets[m];
+    const auto = Math.round(b.variable/MONTH_DAYS[m]);
+    return `<div class="month-row">
+      <div class="mn">${m}月</div>
+      <input type="number" class="input" data-bi="${m}" value="${b.income}">
+      <input type="number" class="input" data-bv="${m}" value="${b.variable}">
+      <input type="number" class="input v3" data-bd="${m}" value="${b.daily!=null&&b.daily!==''?b.daily:''}" placeholder="自動:${auto}">
+    </div>`;
+  }).join('');
+  mbl.querySelectorAll('[data-bi]').forEach(el=>el.oninput=e=>{state.monthlyBudgets[+el.dataset.bi].income=+e.target.value||0;saveState();render()});
+  mbl.querySelectorAll('[data-bv]').forEach(el=>el.oninput=e=>{state.monthlyBudgets[+el.dataset.bv].variable=+e.target.value||0;saveState();render()});
+  mbl.querySelectorAll('[data-bd]').forEach(el=>el.oninput=e=>{state.monthlyBudgets[+el.dataset.bd].daily=e.target.value===''?null:+e.target.value;saveState();render()});
+
+  // Category budgets per month
+  const cbl = document.getElementById('catBudgetList');
+  cbl.innerHTML = MONTHS.map(m=>{
+    const cb = state.catBudgets[m]||{};
+    const auto = Math.round((state.monthlyBudgets[m].variable||0)/CATS.length);
+    return `<details style="margin-bottom:6px;background:rgba(0,0,0,.15);border-radius:8px;padding:6px 10px">
+      <summary style="cursor:pointer;font-size:12px;color:var(--muted)">${m}月のカテゴリー予算</summary>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        ${CATS.map(c=>`<label class="field"><span class="l">${c}</span>
+          <input type="number" class="input" data-cb="${m}|${c}" value="${cb[c]!=null&&cb[c]!==''?cb[c]:''}" placeholder="自動:${auto}" style="padding:6px 8px;font-size:12px">
+        </label>`).join('')}
+      </div>
+    </details>`;
+  }).join('');
+  cbl.querySelectorAll('[data-cb]').forEach(el=>el.oninput=e=>{
+    const [m,c] = el.dataset.cb.split('|');
+    if(!state.catBudgets[m]) state.catBudgets[m]={};
+    state.catBudgets[m][c] = e.target.value===''? '' : +e.target.value;
+    saveState();render();
+  });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ============== EVENTS ==============
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b===btn));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sec-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='annual') drawChart(buildAnnualData());
+  };
+});
+
+document.getElementById('resetAnnual').onclick = ()=>{
+  if(!confirm('年間実績の手入力値をリセットしますか？（目標値に戻ります）')) return;
+  for(const m of MONTHS) state.annualOverrides[m] = {income:null,fixed:null,varActual:null,other:null};
+  saveState();render();showToast('リセットしました');
+};
+
+function celebrateSave(date, amt){
+  const today = todayStr();
+  if(date !== today) return;
+  const month = new Date().getMonth()+1;
+  if(!MONTHS.includes(month)) return;
+  const dailyBudget = getDailyBudget(month);
+  const todayTotal = state.expenses.filter(e=>e.date===today).reduce((s,e)=>s+(+e.amount||0),0);
+  const before = todayTotal - amt;
+  if(todayTotal <= dailyBudget){
+    const remainPct = (dailyBudget - todayTotal) / dailyBudget;
+    showCoinShower(0.6 + remainPct);
+  } else if(before <= dailyBudget && todayTotal > dailyBudget){
+    // 予算を超えた瞬間 — 演出は控えめ
+  }
+}
+
+function afterSaveFlow(date, amt){
+  const newBadges = checkAchievements(true);
+  saveState();
+  render();
+  if(!newBadges.length) celebrateSave(date, amt);
+}
+
+// Quick save
+document.getElementById('quickSave').onclick = ()=>{
+  const amt = +document.getElementById('quickAmount').value;
+  if(!amt || amt<=0){showToast('金額を入力してください');return}
+  const note = document.getElementById('quickNote').value.trim();
+  const date = todayStr();
+  state.expenses.push({id:Date.now()+'_'+Math.random().toString(36).slice(2,7), date, cat:state.selectedCat, amount:amt, note});
+  document.getElementById('quickAmount').value='';
+  document.getElementById('quickNote').value='';
+  showToast(`記録: ${state.selectedCat} ${fmt(amt)}`);
+  afterSaveFlow(date, amt);
+};
+
+// Full input
+document.getElementById('inSave').onclick = ()=>{
+  const date = document.getElementById('inDate').value || todayStr();
+  const amt = +document.getElementById('inAmount').value;
+  if(!amt||amt<=0){showToast('金額を入力してください');return}
+  const note = document.getElementById('inNote').value.trim();
+  state.expenses.push({id:Date.now()+'_'+Math.random().toString(36).slice(2,7), date, cat:state.selectedCat, amount:amt, note});
+  document.getElementById('inAmount').value='';
+  document.getElementById('inNote').value='';
+  showToast(`記録: ${state.selectedCat} ${fmt(amt)}`);
+  afterSaveFlow(date, amt);
+};
+document.getElementById('inClear').onclick = ()=>{
+  document.getElementById('inAmount').value='';
+  document.getElementById('inNote').value='';
+  document.getElementById('inDate').value=todayStr();
+};
+
+// Settings: initial balance
+document.getElementById('saveInitial').onclick = ()=>{
+  state.initialBalance = +document.getElementById('setInitial').value || 0;
+  saveState();render();showToast('保存しました');
+};
+document.getElementById('addFixed').onclick = ()=>{
+  state.fixedCosts.push({name:'新項目',amount:0});
+  saveState();render();
+};
+
+// Data management
+document.getElementById('exportData').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;a.download=`castle-budget-${todayStr()}.json`;a.click();
+  URL.revokeObjectURL(url);
+};
+document.getElementById('importBtn').onclick = ()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{state = JSON.parse(ev.target.result);saveState();render();showToast('インポート完了')}
+    catch{showToast('読み込み失敗')}
+  };
+  reader.readAsText(file);
+};
+document.getElementById('resetData').onclick = ()=>{
+  if(confirm('全データを削除しますか？')){
+    localStorage.removeItem(STORAGE_KEY);
+    state = loadState();
+    render();showToast('リセットしました');
+  }
+};
+
+window.addEventListener('resize',()=>{if(document.getElementById('sec-annual').classList.contains('active')) renderAnnual()});
+
+// 初回ロード: 既得バッジを静かに登録(NEW表示は次回の達成時のみ)
+(function initAchievements(){
+  if(!state.unlockedAchievements) state.unlockedAchievements = {};
+  const firstTime = Object.keys(state.unlockedAchievements).length === 0;
+  ACHIEVEMENTS.forEach(a=>{
+    let u=false; try{u=a.check()}catch{}
+    if(u && !state.unlockedAchievements[a.id]){
+      state.unlockedAchievements[a.id] = firstTime ? 1 : Date.now();
+    }
+  });
+  saveState();
+})();
+
+render();
+</script>
+</body>
+</html>

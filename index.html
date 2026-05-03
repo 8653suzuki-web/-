@@ -93,7 +93,12 @@ nav.tabs button:hover:not(.active){color:var(--text)}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media(max-width:600px){
   .castle-stage{height:260px !important}
+  .grid2{grid-template-columns:1fr}
 }
+.input{text-align:left}
+input[type="number"].input,input.input{text-align:left;-moz-appearance:textfield}
+input[type="number"].input::-webkit-inner-spin-button,
+input[type="number"].input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .kpi-input{
   background:transparent;border:none;color:var(--text);
   font-size:18px;font-weight:800;font-feature-settings:"tnum";
@@ -2283,7 +2288,7 @@ function renderAnnual(){
           <div class="m">${d.month}月</div>
           <input class="ann-in" data-f="income"    value="${o.income!=null?o.income:d.income}">
           <input class="ann-in" data-f="fixed"     value="${o.fixed!=null?o.fixed:d.fixed}">
-          <div class="t">${fmt(d.varTarget)}</div>
+          <input class="ann-in" data-fv="variable" value="${mb.variable!=null?mb.variable:''}" placeholder="${d.varTarget}">
           <input class="ann-in" data-fd="daily"    value="${mb.daily!=null&&mb.daily!==''?mb.daily:''}" placeholder="${autoDaily}">
           <input class="ann-in" data-f="varActual" value="${o.varActual!=null?o.varActual:d.varActual}" placeholder="${d.varTarget}">
           <input class="ann-in" data-f="other"     value="${o.other!=null?o.other:''}" placeholder="0">
@@ -2296,6 +2301,16 @@ function renderAnnual(){
   // Edit handlers
   tbl.querySelectorAll('.ann-row[data-month]').forEach(row=>{
     const m = +row.dataset.month;
+    // 変動費目標 (settings側のmonthlyBudgets.variableを更新)
+    row.querySelectorAll('[data-fv="variable"]').forEach(inp=>{
+      inp.oninput = ()=>{
+        if(!state.monthlyBudgets[m]) state.monthlyBudgets[m] = {...DEFAULT_BUDGETS[m]};
+        const v = inp.value;
+        state.monthlyBudgets[m].variable = (v===''?0:+v);
+        saveState();
+      };
+      inp.onchange = ()=>render();
+    });
     // 日予算入力（settings側のmonthlyBudgets.dailyを更新）
     row.querySelectorAll('[data-fd="daily"]').forEach(inp=>{
       inp.oninput = ()=>{

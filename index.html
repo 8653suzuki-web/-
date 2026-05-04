@@ -44,7 +44,7 @@ header{
 
 /* Castle */
 .castle-stage{
-  position:relative;height:240px;border-radius:14px;overflow:hidden;
+  position:relative;height:340px;border-radius:14px;overflow:hidden;
   background:linear-gradient(180deg,#16182a 0%,#3d3050 70%,#5a3f2a 100%);
   border:1px solid var(--border);
 }
@@ -95,7 +95,7 @@ nav.tabs button:hover:not(.active){color:var(--text)}
 .grid2 input,.grid2 select,.grid2 textarea{min-width:0;width:100%}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media(max-width:600px){
-  .castle-stage{height:260px !important}
+  .castle-stage{height:300px !important}
   .grid2{grid-template-columns:1fr}
 }
 .input{text-align:left}
@@ -131,6 +131,84 @@ input[type="date"]::-webkit-calendar-picker-indicator{
 .app-version{
   text-align:center;font-size:9px;color:var(--muted);
   padding:14px 0 4px;letter-spacing:.5px;opacity:.6;
+}
+
+/* === DQ風ステータスウィンドウ === */
+.dq-window{
+  background:#000;
+  border:3px solid #fff;
+  border-radius:4px;
+  padding:10px 14px;margin-top:12px;
+  font-family:'DotGothic16','Hiragino Mincho ProN','Yu Mincho','MS Mincho',serif;
+  color:#fff;font-size:13px;letter-spacing:1px;
+  position:relative;
+  box-shadow:inset 0 0 0 2px #000, inset 0 0 0 3px #fff;
+}
+.dq-window::before{
+  content:'';position:absolute;inset:-3px;
+  border-radius:5px;pointer-events:none;
+}
+.dq-window .dq-row{display:flex;align-items:center;gap:10px;margin:5px 0;font-feature-settings:"tnum"}
+.dq-window .dq-name{font-weight:700;color:#ffd97a;flex:1}
+.dq-window .dq-rank-name{color:#a8aec0;font-size:11px}
+.dq-window .dq-lv{color:#fff}
+.dq-window .dq-lv b{color:#ffd97a;margin-left:4px;font-weight:700;font-size:15px}
+.dq-window .dq-stat-label{width:36px;color:#ffd97a;font-weight:700;flex-shrink:0}
+.dq-window .dq-stat-val{min-width:90px;color:#fff;text-align:right;font-size:12px;flex-shrink:0}
+.dq-window .dq-stat-next{color:#a0a0a0;font-size:10px;margin-left:auto}
+.dq-window .dq-bar{
+  flex:1;height:10px;background:#222;border:1px solid #fff;
+  position:relative;min-width:60px;
+}
+.dq-window .dq-bar-fill{height:100%;transition:width .5s}
+.dq-window .dq-hp{background:linear-gradient(90deg,#5dd39e 0%,#ffd97a 60%,#ff6b8b 100%)}
+.dq-window .dq-mp{background:linear-gradient(90deg,#7fb0ff,#a8c8ff)}
+.dq-window .dq-mp.neg{background:linear-gradient(90deg,#ff6b8b,#ffb84d)}
+.dq-window .dq-hp.crit{background:#ff5b85;animation:critFlash .4s ease-in-out infinite}
+@keyframes critFlash{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* DQメッセージ枠（応援カード等） */
+.dq-frame{
+  background:#000 !important;
+  border:3px solid #fff !important;
+  border-radius:4px !important;
+  box-shadow:inset 0 0 0 2px #000, inset 0 0 0 3px #fff !important;
+  font-family:'Hiragino Mincho ProN','Yu Mincho','MS Mincho',serif !important;
+  position:relative;
+}
+.dq-frame::before{display:none !important}
+.dq-frame::after{
+  content:'▼';
+  position:absolute;
+  bottom:8px;right:12px;
+  color:#fff;font-size:12px;
+  animation:dqArrow 1s steps(2) infinite;
+}
+@keyframes dqArrow{50%{opacity:0}}
+.dq-frame .cheer-headline{color:#fff !important;font-family:inherit}
+.dq-frame .cheer-message{color:#a8aec0 !important;font-family:inherit}
+.dq-frame .cheer-streak{
+  background:#000 !important;
+  color:#ffd97a !important;
+  border:1px solid #ffd97a;
+  font-family:inherit;
+}
+
+/* ピクセルアート用 */
+.castle-stage svg .hero,
+.castle-stage svg .monster{
+  shape-rendering:crispEdges;
+}
+/* キャラクターのアニメーションを停止（位置の問題切り分けのため） */
+
+/* バトル発生バナー */
+.battle-banner{
+  background:#000;border:3px solid #fff;color:#ff6b8b;
+  padding:6px 12px;border-radius:4px;
+  font-family:'Hiragino Mincho ProN','Yu Mincho','MS Mincho',serif;
+  font-weight:800;letter-spacing:2px;font-size:12px;
+  text-align:center;margin-top:10px;
+  box-shadow:inset 0 0 0 2px #000, inset 0 0 0 3px #fff;
 }
 @media(max-width:560px){.grid3{grid-template-columns:1fr 1fr}}
 
@@ -490,6 +568,51 @@ label.field .l{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bott
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* キャラクターレイヤー(HTMLベース、確実に表示) */
+.char-layer{
+  position:absolute;
+  left:0; right:0;
+  bottom:30px;
+  height:140px;
+  pointer-events:none;
+  z-index:2;
+  overflow:visible;
+}
+.char-fig{
+  position:absolute;
+  bottom:0;
+  display:block;
+  transform:translateX(-50%);
+}
+.char-fig svg{
+  width:100%;
+  height:100%;
+  display:block;
+  shape-rendering:crispEdges;
+  image-rendering:pixelated;
+}
+.char-fig.hero{
+  z-index:20;
+  bottom:8px;
+  width:110px;
+  height:140px;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+}
+/* 5層構造: 前列(row-5)が最大、後列(row-1)が最小 */
+.char-fig.row-5{ width:80px; height:80px; bottom:8px; z-index:10 }
+.char-fig.row-4{ width:66px; height:66px; bottom:30px; z-index:8 }
+.char-fig.row-3{ width:54px; height:54px; bottom:48px; z-index:6 }
+.char-fig.row-2{ width:44px; height:44px; bottom:64px; z-index:4 }
+.char-fig.row-1{ width:36px; height:36px; bottom:80px; z-index:2 }
+@media(max-width:600px){
+  .char-fig.hero{ width:80px; height:100px; bottom:6px }
+  .char-fig.row-5{ width:54px; height:54px; bottom:6px }
+  .char-fig.row-4{ width:44px; height:44px; bottom:24px }
+  .char-fig.row-3{ width:36px; height:36px; bottom:38px }
+  .char-fig.row-2{ width:30px; height:30px; bottom:52px }
+  .char-fig.row-1{ width:24px; height:24px; bottom:64px }
+}
+
 /* Particle layer over castle stage */
 .particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
 .tier-badge{
@@ -681,6 +804,7 @@ label.field .l{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bott
   </div>
   <div class="castle-stage" id="castleStage">
     <svg id="castleSvg" viewBox="0 0 800 240" preserveAspectRatio="xMidYMax meet"></svg>
+    <div class="char-layer" id="charLayer"></div>
     <div class="particles" id="particleLayer"></div>
     <div class="tier-badge" id="tierBadge">ぼろ</div>
     <div class="rank-badge">階級 <b id="rankNum">1</b> / 21 — <span id="rankName">ぼろ家</span></div>
@@ -926,7 +1050,7 @@ label.field .l{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bott
   </div>
 </section>
 
-<div class="app-version">v.20260504c — 城防衛家計簿</div>
+<div class="app-version">v.20260504M — 階級21で50体うじゃうじゃ、5層立体配置</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -1167,6 +1291,525 @@ function getRank(savings){
   return {idx,name:cur.name,rank:idx+1,progress:Math.max(0,Math.min(1,progress)),toNext,nextName:next?.name};
 }
 
+// ============== DQステータスウィンドウ ==============
+function renderDQStatus(){
+  const today = todayStr();
+  const month = new Date().getMonth()+1;
+  const useMonth = MONTHS.includes(month) ? month : 5;
+  const dailyBudget = getDailyBudget(useMonth) || 1;
+  const todayUsed = state.expenses.filter(e=>e.date===today).reduce((s,e)=>s+(+e.amount||0),0);
+  const hpRemain = Math.max(0, dailyBudget - todayUsed);
+  const hpRatio = (hpRemain/dailyBudget)*100;
+
+  const sur = computeMonthSurplus(useMonth);
+  const monthVar = state.monthlyBudgets[useMonth]?.variable || 100000;
+  const mpAbs = Math.abs(sur.surplus);
+  const mpRatio = Math.min(100, (mpAbs/(monthVar*0.5))*100);
+
+  const savings = computeCurrentSavings();
+  const rank = getRank(savings);
+
+  document.getElementById('dqLevel').textContent = rank.rank;
+  document.getElementById('dqRankName').textContent = rank.name;
+  document.getElementById('dqHpText').textContent = `${hpRemain.toLocaleString()}/${dailyBudget.toLocaleString()}`;
+  const hpBar = document.getElementById('dqHpBar');
+  hpBar.style.width = Math.max(0,Math.min(100,hpRatio))+'%';
+  hpBar.classList.toggle('crit', hpRatio<20 && hpRatio>0);
+  document.getElementById('dqMpText').textContent = (sur.surplus>=0?'+':'-')+mpAbs.toLocaleString();
+  const mpBar = document.getElementById('dqMpBar');
+  mpBar.style.width = mpRatio+'%';
+  mpBar.classList.toggle('neg', sur.surplus<0);
+  document.getElementById('dqExpText').textContent = savings.toLocaleString();
+  document.getElementById('dqNext').textContent = rank.toNext>0 ? `次LVまで ${rank.toNext.toLocaleString()}G` : 'MAX LEVEL';
+
+  // モンスター出現バナー
+  const banner = document.getElementById('battleBanner');
+  const overDays = sur.overDays || 0;
+  if(overDays>0){
+    banner.innerHTML = `<div class="battle-banner">⚔ 城に魔物が ${overDays}体 出現中…！</div>`;
+  } else {
+    banner.innerHTML = '';
+  }
+}
+
+// ============== ピクセルアート ==============
+function pixel(x,y,w,h,fill,scale){
+  return `<rect x="${x*scale}" y="${y*scale}" width="${w*scale}" height="${h*scale}" fill="${fill}"/>`;
+}
+// 階級ごと(0-20)に冒険者の装備が進化
+function getHeroOutfit(rank){
+  const r = Math.max(0, Math.min(20, rank));
+  const o = {
+    body:'#7a5a3a', belt:'#3d2818', legs:'#5a4030',
+    hat:'#5a4030', hatTrim:'#3d2818',
+    shield:null, sword:null, cape:null, crown:false,
+    weaponType:'sword'
+  };
+  // 体の素材は階級と共に進化
+  if(r>=3)  o.body = '#7fb0ff';        // 青チュニック
+  if(r>=6)  o.body = '#a89888';        // 革鎧
+  if(r>=9)  {o.body = '#c0c8d8';       o.legs='#7d8095';} // 銀チェイン
+  if(r>=11) {o.body = '#e8edf5';       o.legs='#a0a8c0';} // 銀鎧
+  if(r>=13) {o.body = '#ffd97a';       o.legs='#9a6a18';} // 金鎧
+  if(r>=16) {o.body = '#ffe478';       o.legs='#b8860b';} // 純金
+  if(r>=18) {o.body = '#cef0ff';       o.legs='#7fb0ff';} // 水晶
+  if(r>=20) {o.body = '#fff';          o.legs='#cef0ff';} // 神聖白
+
+  // 兜
+  if(r>=1)  o.hat = '#5a4030';
+  if(r>=4)  {o.hat = '#7a3a2a'; o.hatTrim='#5a2018';} // 赤バンダナ
+  if(r>=7)  o.hat = '#a89888';   // 青銅兜
+  if(r>=10) o.hat = '#c0c8d8';   // 銀兜
+  if(r>=14) o.hat = '#ffd97a';   // 金兜
+  if(r>=17) o.hat = '#cef0ff';   // 水晶兜
+
+  // 剣
+  if(r>=2)  o.sword = '#7d5a3a';   // 木の棒
+  if(r>=5)  o.sword = '#a89888';   // 青銅
+  if(r>=8)  o.sword = '#c0c8d8';   // 銀
+  if(r>=12) o.sword = '#e8edf5';   // 銀光
+  if(r>=15) o.sword = '#ffd97a';   // 金
+  if(r>=18) o.sword = '#fff';      // 水晶
+  if(r>=20) o.sword = 'url(#rainbow)'; // 伝説
+
+  // 盾
+  if(r>=4)  o.shield = '#7d5a3a';
+  if(r>=6)  o.shield = '#a89888';
+  if(r>=9)  o.shield = '#c0c8d8';
+  if(r>=13) o.shield = '#e8edf5';
+  if(r>=16) o.shield = '#ffe478';
+  if(r>=19) o.shield = 'url(#rainbow)';
+
+  // マント
+  if(r>=8)  o.cape = '#5a4080';
+  if(r>=12) o.cape = '#7d4080';
+  if(r>=15) o.cape = '#c93a3a';
+  if(r>=19) o.cape = 'url(#rainbow)';
+
+  // 王冠
+  if(r>=17) o.crown = true;
+  return o;
+}
+
+function heroSprite(cx, cy, rank=0, scale=3){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  const t = getHeroOutfit(rank);
+  // cy = 足元の位置として扱う。pixelのy=0は頭頂部、y=20が足の先
+  let s = `<g class="hero" transform="translate(${cx-8*scale},${cy-20*scale})">`;
+  // マント
+  if(t.cape){
+    if(String(t.cape).startsWith('url')){
+      s += `<rect x="${1*scale}" y="${8*scale}" width="${2*scale}" height="${10*scale}" fill="${t.cape}"/>`;
+      s += `<rect x="${13*scale}" y="${8*scale}" width="${2*scale}" height="${10*scale}" fill="${t.cape}"/>`;
+    } else {
+      s += p(1,8,2,10,t.cape);
+      s += p(13,8,2,10,t.cape);
+    }
+  }
+  // 兜
+  s += p(5,0,6,1,t.hatTrim);
+  s += p(4,1,8,2,t.hat);
+  // 王冠
+  if(t.crown){
+    s += p(4,-2,1,2,'#ffd97a');
+    s += p(7,-3,2,3,'#ffd97a');
+    s += p(11,-2,1,2,'#ffd97a');
+    s += p(5,-1,1,1,'#c93a3a');
+    s += p(10,-1,1,1,'#7fb0ff');
+  }
+  // 顔
+  s += p(5,3,6,4,'#ffe2c0');
+  s += p(6,4,1,1,'#1a1d2e');
+  s += p(9,4,1,1,'#1a1d2e');
+  s += p(7,6,2,1,'#5a3a25');
+  // 体
+  s += p(4,7,8,7,t.body);
+  s += p(4,11,8,1,t.belt);
+  // 腕
+  s += p(2,8,2,5,'#ffe2c0');
+  s += p(12,8,2,5,'#ffe2c0');
+  // 盾
+  if(t.shield){
+    if(String(t.shield).startsWith('url')){
+      s += `<rect x="${0*scale}" y="${9*scale}" width="${2*scale}" height="${5*scale}" fill="${t.shield}"/>`;
+    } else {
+      s += p(0,9,2,5,t.shield);
+    }
+    s += p(1,10,1,3,'#fff');
+  }
+  // 剣
+  if(t.sword){
+    if(String(t.sword).startsWith('url')){
+      s += `<rect x="${14*scale}" y="${5*scale}" width="${1*scale}" height="${9*scale}" fill="${t.sword}"/>`;
+    } else {
+      s += p(14,5,1,9,t.sword);
+    }
+    s += p(13,13,3,1,'#5a3a25');
+  }
+  // 脚
+  s += p(5,14,2,5,t.legs);
+  s += p(9,14,2,5,t.legs);
+  s += p(5,19,2,1,'#3d2818');
+  s += p(9,19,2,1,'#3d2818');
+  s += '</g>';
+  return s;
+}
+function slimeSprite(cx, cy, level=0, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  const color = level===0?'#5dd39e':level===1?'#7fb0ff':'#c93a3a';
+  const dark = level===0?'#3da06f':level===1?'#3d6e9a':'#8a1a1a';
+  return `<g class="monster" transform="translate(${cx-6*scale},${cy-6*scale})">
+    ${p(4,0,4,1,color)}${p(3,1,6,1,color)}${p(2,2,8,1,color)}
+    ${p(1,3,10,1,color)}${p(0,4,12,2,color)}${p(0,6,12,1,dark)}${p(1,7,10,1,dark)}
+    ${p(3,3,1,1,'#fff')}${p(8,3,1,1,'#fff')}${p(3,4,1,1,'#000')}${p(8,4,1,1,'#000')}
+    ${p(4,5,4,1,dark)}
+  </g>`;
+}
+function ghostSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-6*scale},${cy-8*scale})">
+    ${p(3,0,6,1,'#e8e8f0')}${p(2,1,8,2,'#e8e8f0')}${p(1,3,10,4,'#e8e8f0')}
+    ${p(0,7,2,1,'#e8e8f0')}${p(2,7,2,1,'#e8e8f0')}${p(4,7,2,1,'#e8e8f0')}
+    ${p(6,7,2,1,'#e8e8f0')}${p(8,7,2,1,'#e8e8f0')}${p(10,7,2,1,'#e8e8f0')}
+    ${p(3,3,1,1,'#000')}${p(8,3,1,1,'#000')}${p(4,5,4,1,'#000')}
+  </g>`;
+}
+function dragonSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-8*scale},${cy-8*scale})">
+    ${p(2,0,1,1,'#c93a3a')}${p(4,0,1,1,'#c93a3a')}${p(6,0,1,1,'#c93a3a')}
+    ${p(1,1,8,3,'#c93a3a')}${p(0,4,10,3,'#a82828')}${p(1,7,8,1,'#8a1a1a')}
+    ${p(2,2,1,1,'#ffd97a')}${p(7,2,1,1,'#ffd97a')}
+    ${p(2,3,1,1,'#000')}${p(7,3,1,1,'#000')}
+    ${p(3,5,4,1,'#5a1818')}
+    ${p(10,2,2,2,'#c93a3a')}${p(11,1,3,1,'#c93a3a')}
+  </g>`;
+}
+
+function slimeBlob(p, body, dark){
+  // 12x8 のスライム体形
+  return `${p(4,0,4,1,body)}${p(3,1,6,1,body)}${p(2,2,8,1,body)}
+    ${p(1,3,10,1,body)}${p(0,4,12,2,body)}${p(0,6,12,1,dark)}${p(1,7,10,1,dark)}
+    ${p(3,3,1,1,'#fff')}${p(8,3,1,1,'#fff')}${p(3,4,1,1,'#000')}${p(8,4,1,1,'#000')}
+    ${p(4,5,4,1,dark)}`;
+}
+
+function metalSlimeSprite(cx, cy, scale=1.5){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-6*scale},${cy-8*scale})">
+    ${slimeBlob(p,'#e8edf5','#7d8095')}
+    ${p(0,4,1,1,'#fff')}${p(11,4,1,1,'#fff')}
+  </g>`;
+}
+function redSlimeSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-6*scale},${cy-8*scale})">
+    ${slimeBlob(p,'#ff6b8b','#a82a48')}
+  </g>`;
+}
+function healSlimeSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-6*scale},${cy-8*scale})">
+    ${slimeBlob(p,'#ffc0d8','#e88ab0')}
+    ${p(5,2,2,1,'#fff')}${p(6,1,1,3,'#fff')}
+  </g>`;
+}
+function bubbleSlimeSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-6*scale},${cy-8*scale})">
+    ${slimeBlob(p,'#3d6a3a','#1a3a1a')}
+    ${p(2,2,1,1,'#5dd39e')}${p(9,3,1,1,'#5dd39e')}
+  </g>`;
+}
+function metalKingSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-6*scale},${cy-10*scale})">
+    ${p(3,-2,1,2,'#ffd97a')}${p(5,-2,1,2,'#ffd97a')}${p(7,-2,1,2,'#ffd97a')}${p(9,-2,1,2,'#ffd97a')}
+    ${p(2,0,9,1,'#ffd97a')}
+    ${p(3,-1,1,1,'#c93a3a')}${p(7,-1,1,1,'#7fb0ff')}
+    ${p(4,1,4,1,'#e8edf5')}${p(3,2,6,1,'#e8edf5')}${p(2,3,8,1,'#d0d6e0')}
+    ${p(1,4,10,1,'#c0c8d8')}${p(0,5,12,2,'#a0a8c0')}${p(0,7,12,1,'#7d8095')}${p(1,8,10,1,'#5e6e8a')}
+    ${p(3,4,1,1,'#fff')}${p(8,4,1,1,'#fff')}${p(3,5,1,1,'#000')}${p(8,5,1,1,'#000')}
+    ${p(4,6,4,1,'#5e6e8a')}
+  </g>`;
+}
+function kingSlimeSprite(cx, cy, scale=2){
+  // 大型キングスライム
+  const s = scale * 1.5;
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,s);
+  return `<g class="monster" transform="translate(${cx-7*s},${cy-10*s})">
+    ${p(3,-1,1,1,'#ffd97a')}${p(5,-1,1,1,'#ffd97a')}${p(7,-1,1,1,'#ffd97a')}${p(9,-1,1,1,'#ffd97a')}
+    ${p(2,0,9,1,'#ffd97a')}${p(3,0,1,1,'#c93a3a')}${p(7,0,1,1,'#7fb0ff')}
+    ${p(4,1,5,1,'#7fb0ff')}${p(2,2,9,1,'#7fb0ff')}${p(1,3,11,1,'#7fb0ff')}
+    ${p(0,4,13,3,'#5d8acc')}${p(0,7,13,1,'#3d6e9a')}${p(1,8,11,1,'#3d6e9a')}
+    ${p(3,3,1,1,'#fff')}${p(9,3,1,1,'#fff')}${p(3,4,1,1,'#000')}${p(9,4,1,1,'#000')}
+    ${p(4,6,5,1,'#3d6e9a')}
+  </g>`;
+}
+function drakeySprite(cx, cy, scale=2){
+  // 小さなコウモリ
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-7*scale},${cy-7*scale})">
+    ${p(0,0,2,1,'#5a3a25')}${p(2,1,1,1,'#5a3a25')}${p(3,0,2,1,'#5a3a25')}
+    ${p(9,0,2,1,'#5a3a25')}${p(11,1,1,1,'#5a3a25')}${p(12,0,2,1,'#5a3a25')}
+    ${p(0,2,4,2,'#3d2818')}${p(10,2,4,2,'#3d2818')}
+    ${p(4,1,6,4,'#5a3a25')}
+    ${p(5,2,1,1,'#ff6b8b')}${p(8,2,1,1,'#ff6b8b')}
+    ${p(5,3,1,1,'#000')}${p(8,3,1,1,'#000')}
+    ${p(6,4,2,1,'#1a1308')}
+    ${p(4,5,2,1,'#5a3a25')}${p(8,5,2,1,'#5a3a25')}
+  </g>`;
+}
+function gargoyleSprite(cx, cy, scale=2){
+  // 翼を広げた石像
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-8*scale},${cy-9*scale})">
+    ${p(0,2,3,3,'#7d8095')}${p(13,2,3,3,'#7d8095')}
+    ${p(0,5,2,1,'#5e6e8a')}${p(14,5,2,1,'#5e6e8a')}
+    ${p(5,0,1,1,'#5e6e8a')}${p(10,0,1,1,'#5e6e8a')}
+    ${p(5,1,6,4,'#7d8095')}${p(4,2,8,3,'#7d8095')}
+    ${p(6,2,1,1,'#ffd97a')}${p(9,2,1,1,'#ffd97a')}
+    ${p(6,3,1,1,'#000')}${p(9,3,1,1,'#000')}
+    ${p(7,4,2,1,'#1a1308')}
+    ${p(5,5,6,2,'#5e6e8a')}${p(6,7,4,1,'#5e6e8a')}
+    ${p(6,8,1,1,'#5e6e8a')}${p(9,8,1,1,'#5e6e8a')}
+  </g>`;
+}
+function golemSprite(cx, cy, scale=2.5){
+  // 巨大な岩のゴーレム
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-7*scale},${cy-12*scale})">
+    ${p(3,0,8,2,'#7d6a5a')}
+    ${p(2,2,10,3,'#a89888')}
+    ${p(1,5,12,4,'#7d6a5a')}
+    ${p(2,9,10,2,'#5a4d40')}
+    ${p(0,5,1,3,'#a89888')}${p(13,5,1,3,'#a89888')}
+    ${p(2,11,3,1,'#5a4d40')}${p(9,11,3,1,'#5a4d40')}
+    ${p(4,3,1,1,'#5dd39e')}${p(9,3,1,1,'#5dd39e')}
+    ${p(4,4,1,1,'#fff')}${p(9,4,1,1,'#fff')}
+    ${p(5,6,1,1,'#1a1308')}${p(8,6,1,1,'#1a1308')}
+    ${p(5,8,4,1,'#1a1308')}
+  </g>`;
+}
+function lycantSprite(cx, cy, scale=2){
+  // 狼男
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-7*scale},${cy-10*scale})">
+    ${p(2,0,1,2,'#5a4030')}${p(11,0,1,2,'#5a4030')}
+    ${p(3,1,9,2,'#5a4030')}${p(2,2,11,1,'#5a4030')}
+    ${p(4,3,1,1,'#ffd97a')}${p(9,3,1,1,'#ffd97a')}
+    ${p(4,4,1,1,'#000')}${p(9,4,1,1,'#000')}
+    ${p(6,4,2,1,'#3d2818')}${p(7,5,1,1,'#fff')}
+    ${p(3,6,8,3,'#7a5a3a')}${p(2,7,1,1,'#7a5a3a')}${p(11,7,1,1,'#7a5a3a')}
+    ${p(3,9,2,1,'#3d2818')}${p(9,9,2,1,'#3d2818')}
+  </g>`;
+}
+function chimeraSprite(cx, cy, scale=2.2){
+  // 翼の生えた獣
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-9*scale},${cy-10*scale})">
+    ${p(2,3,2,2,'#c93a3a')}${p(0,4,2,1,'#a82828')}
+    ${p(14,3,2,2,'#c93a3a')}${p(16,4,2,1,'#a82828')}
+    ${p(3,2,1,1,'#a82828')}${p(14,2,1,1,'#a82828')}
+    ${p(4,1,10,5,'#c93a3a')}${p(5,0,8,1,'#c93a3a')}
+    ${p(6,2,1,1,'#ffd97a')}${p(11,2,1,1,'#ffd97a')}
+    ${p(6,3,1,1,'#000')}${p(11,3,1,1,'#000')}
+    ${p(8,4,2,1,'#1a1308')}
+    ${p(5,6,8,3,'#a82828')}
+    ${p(5,9,2,1,'#5a1818')}${p(11,9,2,1,'#5a1818')}
+  </g>`;
+}
+function goldDragonSprite(cx, cy, scale=2.4){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-10*scale},${cy-10*scale})">
+    ${p(2,0,1,1,'#ffd97a')}${p(4,0,1,1,'#ffd97a')}${p(6,0,1,1,'#ffd97a')}${p(8,0,1,1,'#ffd97a')}
+    ${p(1,1,10,3,'#ffd97a')}${p(0,4,12,3,'#b8860b')}${p(1,7,10,1,'#9a6a18')}${p(2,8,8,1,'#7a4a08')}
+    ${p(2,2,1,1,'#fff')}${p(8,2,1,1,'#fff')}
+    ${p(2,3,1,1,'#c93a3a')}${p(8,3,1,1,'#c93a3a')}
+    ${p(3,5,5,1,'#5a3018')}
+    ${p(11,2,3,3,'#ffd97a')}${p(13,1,3,1,'#ffd97a')}${p(11,5,4,1,'#ffd97a')}
+    ${p(0,2,1,2,'#ffd97a')}${p(1,4,1,1,'#ffd97a')}
+  </g>`;
+}
+function greatDragonSprite(cx, cy, scale=2.8){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-12*scale},${cy-12*scale})">
+    ${p(2,0,1,1,'#5a4080')}${p(4,0,1,1,'#5a4080')}${p(6,0,1,1,'#5a4080')}${p(8,0,1,1,'#5a4080')}${p(10,0,1,1,'#5a4080')}
+    ${p(1,1,12,3,'#5a4080')}${p(0,4,14,4,'#3d2860')}${p(1,8,12,2,'#1a0a3a')}${p(2,10,10,1,'#0a0518')}
+    ${p(2,2,1,1,'#ffd97a')}${p(10,2,1,1,'#ffd97a')}
+    ${p(2,3,1,1,'#fff')}${p(10,3,1,1,'#fff')}
+    ${p(3,5,1,1,'#000')}${p(9,5,1,1,'#000')}
+    ${p(4,6,5,1,'#1a0a18')}
+    ${p(13,3,4,3,'#5a4080')}${p(15,2,3,1,'#5a4080')}${p(13,6,4,1,'#5a4080')}
+    ${p(0,3,1,2,'#5a4080')}${p(0,5,1,1,'#5a4080')}
+    ${p(5,11,2,1,'#0a0518')}${p(9,11,2,1,'#0a0518')}
+  </g>`;
+}
+function rainbowDragonSprite(cx, cy, scale=3){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-12*scale},${cy-13*scale})">
+    ${p(2,0,1,1,'#ff8fa6')}${p(4,0,1,1,'#ffd97a')}${p(6,0,1,1,'#5dd39e')}${p(8,0,1,1,'#7fb0ff')}${p(10,0,1,1,'#c0a0ff')}
+    <rect x="${1*scale}" y="${1*scale}" width="${12*scale}" height="${4*scale}" fill="url(#rainbow)"/>
+    <rect x="${0*scale}" y="${5*scale}" width="${14*scale}" height="${4*scale}" fill="url(#rainbow)" opacity="0.85"/>
+    ${p(1,9,12,2,'#fff')}${p(2,11,10,1,'#cef0ff')}
+    ${p(2,2,1,1,'#fff')}${p(10,2,1,1,'#fff')}
+    ${p(3,3,1,1,'#000')}${p(9,3,1,1,'#000')}
+    ${p(4,5,5,1,'#1a1d2e')}
+    <rect x="${13*scale}" y="${3*scale}" width="${4*scale}" height="${3*scale}" fill="url(#rainbow)"/>
+    <rect x="${0*scale}" y="${3*scale}" width="${1*scale}" height="${3*scale}" fill="url(#rainbow)"/>
+    ${p(5,11,2,1,'#cef0ff')}${p(9,11,2,1,'#cef0ff')}
+  </g>`;
+}
+function metalDragonSprite(cx, cy, scale=2.6){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-10*scale},${cy-11*scale})">
+    ${p(2,0,1,1,'#c0c8d8')}${p(4,0,1,1,'#c0c8d8')}${p(6,0,1,1,'#c0c8d8')}${p(8,0,1,1,'#c0c8d8')}
+    ${p(1,1,10,3,'#e8edf5')}${p(0,4,12,3,'#c0c8d8')}${p(1,7,10,1,'#7d8095')}${p(2,8,8,1,'#5e6e8a')}
+    ${p(2,2,1,1,'#fff')}${p(8,2,1,1,'#fff')}
+    ${p(2,3,1,1,'#000')}${p(8,3,1,1,'#000')}
+    ${p(3,5,5,1,'#5e6e8a')}
+    ${p(11,2,3,3,'#e8edf5')}${p(13,1,3,1,'#e8edf5')}${p(11,5,4,1,'#e8edf5')}
+    ${p(0,2,1,2,'#e8edf5')}
+  </g>`;
+}
+function babyDragonSprite(cx, cy, scale=1.6){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-7*scale},${cy-7*scale})">
+    ${p(2,0,1,1,'#5dd39e')}${p(4,0,1,1,'#5dd39e')}${p(6,0,1,1,'#5dd39e')}
+    ${p(1,1,8,3,'#5dd39e')}${p(0,4,9,2,'#3da06f')}${p(1,6,7,1,'#3da06f')}
+    ${p(2,2,1,1,'#ffe478')}${p(6,2,1,1,'#ffe478')}
+    ${p(2,3,1,1,'#000')}${p(6,3,1,1,'#000')}
+    ${p(3,5,3,1,'#1a1308')}
+    ${p(9,3,3,1,'#5dd39e')}${p(10,2,2,1,'#5dd39e')}${p(11,4,2,1,'#5dd39e')}
+  </g>`;
+}
+function seaDragonSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-12*scale},${cy-7*scale})">
+    ${p(0,3,2,1,'#7fb0ff')}${p(2,2,2,2,'#7fb0ff')}${p(2,1,1,1,'#7fb0ff')}
+    ${p(4,2,3,1,'#5d8acc')}${p(5,3,4,1,'#7fb0ff')}
+    ${p(7,1,3,2,'#7fb0ff')}${p(8,0,1,1,'#7fb0ff')}
+    ${p(10,3,4,1,'#5d8acc')}
+    ${p(13,1,3,2,'#7fb0ff')}${p(14,0,1,1,'#7fb0ff')}
+    ${p(16,3,4,1,'#5d8acc')}
+    ${p(19,1,3,2,'#7fb0ff')}${p(22,2,2,1,'#7fb0ff')}
+    ${p(2,1,1,1,'#1a1d2e')}${p(3,2,1,1,'#fff')}
+    ${p(0,5,1,1,'#5d8acc')}${p(7,4,1,1,'#5d8acc')}${p(13,4,1,1,'#5d8acc')}${p(19,4,1,1,'#5d8acc')}
+  </g>`;
+}
+function bigDragonSprite(cx, cy, scale=2){
+  const p=(x,y,w,h,f)=>pixel(x,y,w,h,f,scale);
+  return `<g class="monster" transform="translate(${cx-10*scale},${cy-9*scale})">
+    ${p(2,0,1,1,'#c93a3a')}${p(4,0,1,1,'#c93a3a')}${p(6,0,1,1,'#c93a3a')}${p(8,0,1,1,'#c93a3a')}
+    ${p(1,1,10,3,'#c93a3a')}${p(0,4,12,3,'#a82828')}${p(1,7,10,1,'#8a1a1a')}${p(2,8,8,1,'#5a1818')}
+    ${p(2,2,1,1,'#ffd97a')}${p(8,2,1,1,'#ffd97a')}
+    ${p(2,3,1,1,'#000')}${p(8,3,1,1,'#000')}
+    ${p(3,5,5,1,'#5a1818')}
+    ${p(11,2,3,3,'#c93a3a')}${p(13,1,3,1,'#c93a3a')}${p(11,5,4,1,'#c93a3a')}
+    ${p(0,2,1,2,'#c93a3a')}${p(1,4,1,1,'#c93a3a')}
+  </g>`;
+}
+
+// 階級2から1階級ごとに新しい仲間が加わる（全部違う種類）
+const ALLY_LINEUP = [
+  // 1〜20: 各階級で1体ずつ解禁される基本ラインアップ（全種ユニーク）
+  'slime', 'redSlime', 'healSlime', 'bubbleSlime', 'drakey',
+  'gargoyle', 'metalSlime', 'ghost', 'kingSlime', 'metalKing',
+  'golem', 'babyDragon', 'lycant', 'chimera', 'seaDragon',
+  'bigDragon', 'metalDragon', 'goldDragon', 'greatDragon', 'rainbowDragon',
+  // 21〜50: 高階級で増殖する強キャラ軍団（うじゃうじゃ感のため重複OK）
+  'babyDragon', 'seaDragon', 'metalKing', 'golem', 'bigDragon',
+  'drakey', 'gargoyle', 'ghost', 'metalSlime', 'kingSlime',
+  'metalDragon', 'lycant', 'chimera', 'goldDragon', 'seaDragon',
+  'greatDragon', 'babyDragon', 'metalKing', 'bigDragon', 'drakey',
+  'metalDragon', 'ghost', 'seaDragon', 'golem', 'metalKing',
+  'greatDragon', 'bigDragon', 'metalDragon', 'seaDragon', 'rainbowDragon',
+];
+
+// 階級ごとの仲間体数（rank 1=0体, rank 21=50体, 緩やかに増える）
+const ALLY_COUNTS = [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 46, 50];
+
+// 5行レイアウト構成（前列が大きく、奥行き付き）
+const ALLY_ROWS = [
+  { y: 232, scale: 4.5, max: 10, sizeClass: 'row-5' },  // 前列（最大）
+  { y: 220, scale: 3.5, max: 10, sizeClass: 'row-4' },
+  { y: 208, scale: 2.8, max: 10, sizeClass: 'row-3' },
+  { y: 196, scale: 2.2, max: 10, sizeClass: 'row-2' },
+  { y: 184, scale: 1.7, max: 10, sizeClass: 'row-1' },  // 後列（最小）
+];
+
+// x配置生成: count体を左右均等に配置（城門 x=350-450 を避ける）
+function generateRowXs(count){
+  const xs = [];
+  if(count === 0) return xs;
+  const leftN = Math.ceil(count / 2);
+  const rightN = Math.floor(count / 2);
+  // 左側: x=50-340
+  for(let i=0; i<leftN; i++){
+    const t = (i + 0.5) / leftN;
+    xs.push(50 + t * (340 - 50));
+  }
+  // 右側: x=460-750
+  for(let i=0; i<rightN; i++){
+    const t = (i + 0.5) / rightN;
+    xs.push(460 + t * (750 - 460));
+  }
+  return xs;
+}
+
+function getAllies(rankIdx){
+  // 階級ごとの体数（rank 1=0, rank 21=50）
+  const count = ALLY_COUNTS[Math.max(0, Math.min(20, rankIdx))] || 0;
+  if(count <= 0) return [];
+
+  // 直近で解禁された強キャラを先頭に（前列ほど目立たせる）
+  const types = ALLY_LINEUP.slice(0, count).reverse();
+
+  const allies = [];
+  let idx = 0;
+  for(const row of ALLY_ROWS){
+    const rowCount = Math.min(row.max, count - idx);
+    if(rowCount <= 0) break;
+    const xs = generateRowXs(rowCount);
+    for(let i=0; i<rowCount; i++){
+      allies.push({
+        type: types[idx++],
+        x: xs[i],
+        y: row.y,
+        scale: row.scale,
+        sizeClass: row.sizeClass
+      });
+    }
+  }
+  return allies;
+}
+
+function renderAlly(a){
+  switch(a.type){
+    case 'slime':         return slimeSprite(a.x, a.y, 0, a.scale);
+    case 'redSlime':      return redSlimeSprite(a.x, a.y, a.scale);
+    case 'healSlime':     return healSlimeSprite(a.x, a.y, a.scale);
+    case 'bubbleSlime':   return bubbleSlimeSprite(a.x, a.y, a.scale);
+    case 'metalSlime':    return metalSlimeSprite(a.x, a.y, a.scale);
+    case 'metalKing':     return metalKingSprite(a.x, a.y, a.scale);
+    case 'kingSlime':     return kingSlimeSprite(a.x, a.y, a.scale);
+    case 'drakey':        return drakeySprite(a.x, a.y-12, a.scale);
+    case 'gargoyle':      return gargoyleSprite(a.x, a.y-2, a.scale);
+    case 'ghost':         return ghostSprite(a.x, a.y-6, a.scale);
+    case 'golem':         return golemSprite(a.x, a.y, a.scale);
+    case 'lycant':        return lycantSprite(a.x, a.y-2, a.scale);
+    case 'chimera':       return chimeraSprite(a.x, a.y-2, a.scale);
+    case 'babyDragon':    return babyDragonSprite(a.x, a.y, a.scale);
+    case 'seaDragon':     return seaDragonSprite(a.x, a.y-2, a.scale);
+    case 'bigDragon':     return bigDragonSprite(a.x, a.y, a.scale);
+    case 'metalDragon':   return metalDragonSprite(a.x, a.y, a.scale);
+    case 'goldDragon':    return goldDragonSprite(a.x, a.y, a.scale);
+    case 'greatDragon':   return greatDragonSprite(a.x, a.y, a.scale);
+    case 'rainbowDragon': return rainbowDragonSprite(a.x, a.y, a.scale);
+    default: return '';
+  }
+}
+
 // ============== PARTICLES (per tier) ==============
 function getTier(idx){return RANKS[idx]?.tier ?? 0}
 
@@ -1175,6 +1818,61 @@ function makeParticle(cls, opts){
   el.className = cls;
   Object.assign(el.style, opts);
   return el;
+}
+
+// 個別SVGラッパー（各キャラを独立したSVGで描画 → div配置で位置を確実に）
+function makeAllySvg(type){
+  const cx=12, cy=10;
+  let inner;
+  switch(type){
+    case 'slime':         inner = slimeSprite(cx, cy, 0, 1); break;
+    case 'redSlime':      inner = redSlimeSprite(cx, cy, 1); break;
+    case 'healSlime':     inner = healSlimeSprite(cx, cy, 1); break;
+    case 'bubbleSlime':   inner = bubbleSlimeSprite(cx, cy, 1); break;
+    case 'metalSlime':    inner = metalSlimeSprite(cx, cy, 1); break;
+    case 'metalKing':     inner = metalKingSprite(cx, cy, 1); break;
+    case 'kingSlime':     inner = kingSlimeSprite(cx, cy, 1); break;
+    case 'drakey':        inner = drakeySprite(cx, cy-3, 1); break;
+    case 'gargoyle':      inner = gargoyleSprite(cx, cy-1, 1); break;
+    case 'ghost':         inner = ghostSprite(cx, cy-2, 1); break;
+    case 'golem':         inner = golemSprite(cx, cy, 1); break;
+    case 'lycant':        inner = lycantSprite(cx, cy, 1); break;
+    case 'chimera':       inner = chimeraSprite(cx, cy, 1); break;
+    case 'babyDragon':    inner = babyDragonSprite(cx, cy, 1); break;
+    case 'seaDragon':     inner = seaDragonSprite(cx, cy-2, 1); break;
+    case 'bigDragon':     inner = bigDragonSprite(cx, cy, 1); break;
+    case 'metalDragon':   inner = metalDragonSprite(cx, cy, 1); break;
+    case 'goldDragon':    inner = goldDragonSprite(cx, cy, 1); break;
+    case 'greatDragon':   inner = greatDragonSprite(cx, cy, 1); break;
+    case 'rainbowDragon': inner = rainbowDragonSprite(cx, cy, 1); break;
+    default:              inner = slimeSprite(cx, cy, 0, 1);
+  }
+  return `<svg viewBox="-2 -3 28 16" preserveAspectRatio="xMidYMax meet" style="width:100%;height:100%;overflow:visible">${inner}</svg>`;
+}
+
+function makeHeroSvg(rank){
+  // viewBox -2 -5 20 26: 王冠用に上を広めに、足元はy=20
+  return `<svg viewBox="-2 -6 22 28" preserveAspectRatio="xMidYMax meet" style="width:100%;height:100%;overflow:visible">${heroSprite(8, 20, rank, 1)}</svg>`;
+}
+
+// HTMLレイヤーで勇者・モンスターを確実に配置
+function renderCharLayer(rank){
+  const layer = document.getElementById('charLayer');
+  if(!layer) return;
+
+  let html = '';
+
+  // 仲間モンスター（5層構造）
+  const allies = getAllies(rank.idx);
+  allies.forEach(a => {
+    const leftPct = (a.x / 800) * 100;
+    html += `<div class="char-fig ${a.sizeClass}" style="left:${leftPct}%">${makeAllySvg(a.type)}</div>`;
+  });
+
+  // 勇者（中央、最前面）
+  html += `<div class="char-fig hero" style="left:50%">${makeHeroSvg(rank.idx)}</div>`;
+
+  layer.innerHTML = html;
 }
 
 function renderParticles(rank){
@@ -1424,8 +2122,10 @@ function renderCastle(rank){
     html += `<circle cx="650" cy="55" r="38" fill="#ffd97a" opacity=".25"/>`;
   }
 
-  // Ground
-  html += `<rect x="0" y="200" width="800" height="40" fill="url(#ground)"/>`;
+  // Ground (より広く、勇者・仲間が乗る土台として明確に)
+  html += `<rect x="0" y="195" width="800" height="50" fill="url(#ground)"/>`;
+  // 地面の前縁ハイライト(勇者の足元が分かるように)
+  html += `<rect x="0" y="194" width="800" height="2" fill="rgba(255,255,255,0.08)"/>`;
 
   // Castle town (rank 13+)
   if(rank.idx>=13){
@@ -1493,6 +2193,7 @@ function renderCastle(rank){
     html += castleDiamond(rank.idx);
   }
 
+  // 勇者・モンスターはHTMLレイヤーで別管理 (renderCharLayer)
   svg.innerHTML = html;
 }
 
@@ -1774,6 +2475,7 @@ function render(){
     : '最高階級に到達！';
   document.body.classList.toggle('body-rank-high', rank.idx>=10);
   renderCastle(rank);
+  renderCharLayer(rank);
   renderParticles(rank);
   celebrateRankIfNeeded(rank);
   renderRankList(savings, rank);

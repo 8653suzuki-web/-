@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>城防衛クエスト家計簿</title>
 <style>
 :root{
@@ -120,6 +123,15 @@ input[type="date"]::-webkit-calendar-picker-indicator{
 }
 .kpi-input:hover{border-bottom-color:rgba(255,255,255,.2)}
 .kpi-input:focus{border-bottom-color:var(--accent);color:var(--accent)}
+.saved-flash{
+  border-color:var(--good) !important;
+  box-shadow:0 0 0 2px rgba(93,211,158,.4) !important;
+  transition:box-shadow .25s,border-color .25s !important;
+}
+.app-version{
+  text-align:center;font-size:9px;color:var(--muted);
+  padding:14px 0 4px;letter-spacing:.5px;opacity:.6;
+}
 @media(max-width:560px){.grid3{grid-template-columns:1fr 1fr}}
 
 /* Cheer card (oracle/herald) */
@@ -914,6 +926,7 @@ label.field .l{font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bott
   </div>
 </section>
 
+<div class="app-version">v.20260504c — 城防衛家計簿</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -1064,7 +1077,25 @@ function hasAnnualOverride(m){
   if(!o) return false;
   return o.income!=null || o.fixed!=null || o.varActual!=null || o.other!=null;
 }
-function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    return true;
+  }catch(e){
+    console.error('Save error:',e);
+    let msg='保存失敗';
+    if(e.name==='QuotaExceededError') msg='保存失敗: 容量不足';
+    else if(e.name==='SecurityError') msg='保存失敗: プライベートモードを解除して下さい';
+    else msg='保存失敗: '+e.message;
+    showToast(msg);
+    return false;
+  }
+}
+function flashSaved(el){
+  if(!el) return;
+  el.classList.add('saved-flash');
+  setTimeout(()=>el.classList.remove('saved-flash'),700);
+}
 
 // ============== HELPERS ==============
 const fmt = n => '¥' + Math.round(n).toLocaleString('ja-JP');
@@ -2175,33 +2206,41 @@ function renderDashboard(){
   attachDeleteHandlers(list);
 }
 
+function readAmount(el){
+  if(!el) return 0;
+  // iOSの一部で値コミットされない問題対策
+  el.blur();
+  let raw = String(el.value || '').replace(/[,\s¥￥]/g, '');
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? 0 : n;
+}
 function tryQuickSave(cat){
   const amtEl = document.getElementById('quickAmount');
-  amtEl.blur();
-  const amt = +amtEl.value;
-  if(!amt || amt<=0) return false;
-  const note = document.getElementById('quickNote').value.trim();
+  const amt = readAmount(amtEl);
+  if(amt<=0) return false;
+  const note = (document.getElementById('quickNote').value||'').trim();
   const date = todayStr();
   state.selectedCat = cat;
   state.expenses.push({id:Date.now()+'_'+Math.random().toString(36).slice(2,7), date, cat, amount:amt, note});
+  if(!saveState()) return false;
   amtEl.value='';
   document.getElementById('quickNote').value='';
-  showToast(`記録: ${cat} ${fmt(amt)}`);
+  showToast(`✓ 記録: ${cat} ${fmt(amt)}`);
   afterSaveFlow(date, amt);
   return true;
 }
 function tryFullSave(cat){
   const amtEl = document.getElementById('inAmount');
-  amtEl.blur();
-  const amt = +amtEl.value;
-  if(!amt || amt<=0) return false;
+  const amt = readAmount(amtEl);
+  if(amt<=0) return false;
   const date = document.getElementById('inDate').value || todayStr();
-  const note = document.getElementById('inNote').value.trim();
+  const note = (document.getElementById('inNote').value||'').trim();
   state.selectedCat = cat;
   state.expenses.push({id:Date.now()+'_'+Math.random().toString(36).slice(2,7), date, cat, amount:amt, note});
+  if(!saveState()) return false;
   amtEl.value='';
   document.getElementById('inNote').value='';
-  showToast(`記録: ${cat} ${fmt(amt)}`);
+  showToast(`✓ 記録: ${cat} ${fmt(amt)}`);
   afterSaveFlow(date, amt);
   return true;
 }
@@ -2280,17 +2319,24 @@ function renderMonthly(){
   const mFixedEl = document.getElementById('mFixed');
   mIncomeEl.value = b?.income || 0;
   mFixedEl.value = fixed;
-  mIncomeEl.onchange = ()=>{
+  const commitIncome = ()=>{
     if(!state.monthlyBudgets[m]) state.monthlyBudgets[m] = {...DEFAULT_BUDGETS[m]};
-    state.monthlyBudgets[m].income = +mIncomeEl.value || 0;
-    saveState();render();
+    const raw = String(mIncomeEl.value||'').replace(/[,\s]/g,'');
+    state.monthlyBudgets[m].income = raw===''?0:(parseInt(raw,10)||0);
+    if(saveState()) flashSaved(mIncomeEl);
   };
-  mFixedEl.onchange = ()=>{
+  const commitFixed = ()=>{
     if(!state.monthlyFixedOverride) state.monthlyFixedOverride = {};
-    const v = mFixedEl.value;
-    state.monthlyFixedOverride[m] = (v==='' ? null : (+v||0));
-    saveState();render();
+    const raw = String(mFixedEl.value||'').replace(/[,\s]/g,'');
+    state.monthlyFixedOverride[m] = (raw==='' ? null : (parseInt(raw,10)||0));
+    if(saveState()) flashSaved(mFixedEl);
   };
+  mIncomeEl.oninput = commitIncome;
+  mFixedEl.oninput = commitFixed;
+  mIncomeEl.onblur = ()=>{commitIncome(); render();};
+  mFixedEl.onblur = ()=>{commitFixed(); render();};
+  mIncomeEl.onchange = ()=>{commitIncome(); render();};
+  mFixedEl.onchange = ()=>{commitFixed(); render();};
   document.getElementById('mVar').textContent = fmt(varTotal);
   const netEl = document.getElementById('mNet');
   netEl.textContent = (net>=0?'+':'') + fmt(Math.abs(net));
@@ -2367,29 +2413,35 @@ function renderAnnual(){
     const m = +row.dataset.month;
     // 変動費目標 (settings側のmonthlyBudgets.variableを更新)
     row.querySelectorAll('[data-fv="variable"]').forEach(inp=>{
-      inp.oninput = ()=>{
+      const commit = ()=>{
         if(!state.monthlyBudgets[m]) state.monthlyBudgets[m] = {...DEFAULT_BUDGETS[m]};
-        const v = inp.value;
-        state.monthlyBudgets[m].variable = (v===''?0:+v);
-        saveState();
+        const v = String(inp.value||'').replace(/[,\s]/g,'');
+        state.monthlyBudgets[m].variable = (v===''?0:(parseInt(v,10)||0));
+        if(saveState()) flashSaved(inp);
       };
-      inp.onchange = ()=>render();
+      inp.oninput = commit;
+      inp.onblur = ()=>{commit(); render();};
+      inp.onchange = ()=>{commit(); render();};
     });
     // 日予算入力（settings側のmonthlyBudgets.dailyを更新）
     row.querySelectorAll('[data-fd="daily"]').forEach(inp=>{
-      inp.oninput = ()=>{
+      const commit = ()=>{
         if(!state.monthlyBudgets[m]) state.monthlyBudgets[m] = {...DEFAULT_BUDGETS[m]};
-        const v = inp.value;
-        state.monthlyBudgets[m].daily = (v===''?null:+v);
-        saveState();
+        const v = String(inp.value||'').replace(/[,\s]/g,'');
+        state.monthlyBudgets[m].daily = (v===''?null:(parseInt(v,10)||0));
+        if(saveState()) flashSaved(inp);
       };
+      inp.oninput = commit;
+      inp.onblur = ()=>{commit(); render();};
+      inp.onchange = ()=>{commit(); render();};
     });
     row.querySelectorAll('.ann-in[data-f]').forEach(inp=>{
       inp.oninput = ()=>{
         if(!state.annualOverrides[m]) state.annualOverrides[m] = {income:null,fixed:null,varActual:null,other:null};
-        const v = inp.value === '' ? null : +inp.value;
-        state.annualOverrides[m][inp.dataset.f] = (isNaN(v)?null:v);
-        saveState();
+        const raw = String(inp.value||'').replace(/[,\s]/g,'');
+        const v = raw==='' ? null : (parseInt(raw,10) || 0);
+        state.annualOverrides[m][inp.dataset.f] = v;
+        if(saveState()) flashSaved(inp);
         // 残高・チャート・ヘッダー更新
         const data2 = buildAnnualData();
         drawChart(data2);
@@ -2775,6 +2827,26 @@ window.addEventListener('resize',()=>{
   renderParticles(rk);
   if(document.getElementById('sec-annual').classList.contains('active')) renderAnnual();
 });
+
+// localStorage 健全性チェック
+(function checkStorage(){
+  let ok=false;
+  try{
+    const TEST='__store_test_'+Date.now();
+    localStorage.setItem(TEST,'1');
+    ok = localStorage.getItem(TEST)==='1';
+    localStorage.removeItem(TEST);
+  }catch(e){ok=false;}
+  if(!ok){
+    setTimeout(()=>{
+      const t=document.getElementById('toast');
+      t.textContent='⚠ 保存機能が使えません: プライベートブラウジング解除 / Cookie設定確認';
+      t.style.borderColor='var(--bad)';t.style.color='var(--bad)';
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'),5000);
+    },800);
+  }
+})();
 
 // 初回ロード: 既得バッジを静かに登録(NEW表示は次回の達成時のみ)
 (function initAchievements(){
